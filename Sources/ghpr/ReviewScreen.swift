@@ -53,8 +53,10 @@ struct ReviewScreen: View {
                 ReviewOverviewView(data: model.data)
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            reviewBar
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                submitButton
+            }
         }
         .alert("GitHub request failed", isPresented: errorShown) {
             Button("OK") { model.errorMessage = nil }
@@ -86,42 +88,35 @@ struct ReviewScreen: View {
         .background(selectedPath == nil ? Color.accentColor.opacity(0.15) : .clear)
     }
 
-    // MARK: Bottom bar
+    // MARK: Submit (top trailing, like GitHub)
 
-    private var reviewBar: some View {
-        HStack(spacing: 12) {
-            if model.pendingComments.isEmpty {
-                Text("No pending comments")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                Label(
-                    "\(model.pendingComments.count) pending comment\(model.pendingComments.count == 1 ? "" : "s")",
-                    systemImage: "clock"
-                )
-                .font(.callout)
-                .foregroundStyle(.orange)
-            }
-            Spacer()
+    private var submitButton: some View {
+        Button {
+            isSubmitPopoverShown = true
+        } label: {
             if model.isBusy {
                 ProgressView()
                     .controlSize(.small)
-            }
-            Button("Submit review…") {
-                isSubmitPopoverShown = true
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(model.isBusy)
-            .popover(isPresented: $isSubmitPopoverShown, arrowEdge: .bottom) {
-                SubmitReviewView(pendingCount: model.pendingComments.count, isBusy: model.isBusy) { event, body in
-                    isSubmitPopoverShown = false
-                    Task { await model.submitReview(event: event, body: body) }
-                }
+            } else if model.pendingComments.isEmpty {
+                Text("Submit review")
+            } else {
+                Text("Submit review (\(model.pendingComments.count))")
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.bar)
+        .buttonStyle(.borderedProminent)
+        .tint(.green)
+        .disabled(model.isBusy)
+        .popover(isPresented: $isSubmitPopoverShown, arrowEdge: .bottom) {
+            SubmitReviewView(
+                pendingCount: model.pendingComments.count,
+                isBusy: model.isBusy,
+                onSubmit: { event, body in
+                    isSubmitPopoverShown = false
+                    Task { await model.submitReview(event: event, body: body) }
+                },
+                onCancel: { isSubmitPopoverShown = false }
+            )
+        }
     }
 
     // MARK: Annotations
