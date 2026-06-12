@@ -34,7 +34,8 @@ let package = Package(
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 "AuthenticationModule",
-                "DiffUIModule"
+                "DiffUIModule",
+                "GithubModule"
             ],
             resources: [.copy("Resources/demo.diff")]
         ),

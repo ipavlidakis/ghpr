@@ -19,6 +19,7 @@ package struct GithubPullRequest: Sendable, Equatable, Decodable {
     package let base: GithubBranchRef
     package let createdAt: Date
     package let updatedAt: Date
+    package let mergedAt: Date?
     package let additions: Int?
     package let deletions: Int?
     package let changedFiles: Int?

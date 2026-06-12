@@ -3,26 +3,31 @@ import SwiftUI
 
 /// Renders one file's diff: collapsible header plus the fixed-row-height
 /// table of hunk headers and code lines (gutter numbers, add/delete tinting,
-/// on-demand intra-line word emphasis).
+/// on-demand intra-line word emphasis, background syntax highlighting).
 ///
 /// Owns its own scrolling — do not wrap it in a `ScrollView`.
 ///
-/// Inline annotation slots (review threads) return with milestone 5 as
-/// dedicated table rows; the SwiftUI-`List`-based slot mechanism was removed
-/// with the `NSTableView` row host (see PLAN decision log).
+/// `annotations` pins arbitrary caller views (review threads — this module
+/// never knows what they are) under the lines they anchor to.
 package struct FileDiffView: View {
     private let fileDiff: FileDiff
     private let highlighter: SyntaxHighlighter
+    private let annotations: [DiffLineAnchor: AnyView]
     private let rows: [DiffRow]
     private let gutterDigits: Int
 
     @State private var isCollapsed = false
     @State private var highlights: FileSyntaxHighlights?
 
-    package init(fileDiff: FileDiff, highlighter: SyntaxHighlighter) {
+    package init(
+        fileDiff: FileDiff,
+        highlighter: SyntaxHighlighter,
+        annotations: [DiffLineAnchor: AnyView] = [:]
+    ) {
         self.fileDiff = fileDiff
         self.highlighter = highlighter
-        rows = DiffRow.rows(for: fileDiff)
+        self.annotations = annotations
+        rows = DiffRow.rows(for: fileDiff, annotatedAnchors: Set(annotations.keys))
         gutterDigits = DiffStyle.gutterDigits(for: fileDiff)
     }
 
@@ -52,7 +57,7 @@ package struct FileDiffView: View {
                 .foregroundStyle(.secondary)
                 .padding(8)
         } else {
-            DiffTableView(rows: rows, gutterDigits: gutterDigits, highlights: highlights)
+            DiffTableView(rows: rows, gutterDigits: gutterDigits, highlights: highlights, annotations: annotations)
         }
     }
 }
