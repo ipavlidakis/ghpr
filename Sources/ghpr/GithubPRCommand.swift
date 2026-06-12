@@ -1,7 +1,7 @@
 import ArgumentParser
 
 @main
-struct GHPRCommand: ParsableCommand {
+struct GithubPRCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ghpr",
         abstract: "Review GitHub pull requests in a native macOS window, straight from your terminal.",
