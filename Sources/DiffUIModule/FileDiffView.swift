@@ -64,10 +64,16 @@ package struct FileDiffView: View {
             DiffTableView(
                 rows: rows,
                 gutterDigits: gutterDigits,
-                highlights: highlights,
-                annotations: annotations,
-                onLineClick: onLineClick
+                highlightsByFile: highlights.map { [fileDiff.path: $0] } ?? [:],
+                annotations: fileAnnotations,
+                onLineClick: onLineClick.map { handler in { _, line in handler(line) } }
             )
         }
+    }
+
+    private var fileAnnotations: [DiffFileAnchor: AnyView] {
+        Dictionary(uniqueKeysWithValues: annotations.map { anchor, content in
+            (DiffFileAnchor(path: fileDiff.path, anchor: anchor), content)
+        })
     }
 }

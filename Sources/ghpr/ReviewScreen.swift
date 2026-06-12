@@ -3,25 +3,23 @@ import Foundation
 import GithubModule
 import SwiftUI
 
-/// The review window: overview and changed files in the sidebar, the selected
-/// content in the detail pane, and the pending-review bar at the bottom.
-/// Composes DiffUIModule components and maps GithubModule models onto them —
-/// the two modules never meet directly.
+/// The review window: GitHub-style header bar, overview and changed files in
+/// the sidebar, and a continuous scroll through every file's diff — the
+/// sidebar selection follows the scroll position, and selecting a file
+/// scrolls to it. Composes DiffUIModule components and maps GithubModule
+/// models onto them; the two modules never meet directly.
 struct ReviewScreen: View {
     private let model: ReviewModel
     private let highlighter = SyntaxHighlighter()
 
     @State private var selectedPath: String?
-    @State private var composerAnchor: DiffLineAnchor?
+    @State private var scrollTarget: DiffScrollTarget?
+    @State private var composerTarget: DiffFileAnchor?
     @State private var isSubmitPopoverShown = false
     @State private var collapsedThreads: Set<String> = []
 
     init(model: ReviewModel) {
         self.model = model
-    }
-
-    private var selectedFile: FileDiff? {
-        model.data.files.first { $0.path == selectedPath }
     }
 
     var body: some View {
@@ -41,26 +39,26 @@ struct ReviewScreen: View {
             VStack(spacing: 0) {
                 overviewRow
                 Divider()
-                FileListView(items: model.data.files.map(FileListItem.init), selectedPath: selectedPath) {
-                    selectedPath = $0.path
-                    composerAnchor = nil
+                FileListView(items: model.data.files.map(FileListItem.init), selectedPath: selectedPath) { item in
+                    selectedPath = item.path
+                    scrollTarget = DiffScrollTarget(path: item.path)
                 }
+                .navigationSplitViewColumnWidth(min: 260, ideal: 340)
             }
-            .navigationSplitViewColumnWidth(min: 260, ideal: 340)
         } detail: {
-            if let selectedFile {
-                FileDiffView(
-                    fileDiff: selectedFile,
-                    highlighter: highlighter,
-                    annotations: annotations(for: selectedFile),
-                    onLineClick: { line in
-                        composerAnchor = line.anchors.first
-                    }
-                )
-                .padding(12)
-                .id(selectedFile.path)
-            } else {
+            if selectedPath == nil {
                 ReviewOverviewView(data: model.data)
+            } else {
+                MultiFileDiffView(
+                    files: model.data.files,
+                    highlighter: highlighter,
+                    annotations: annotations,
+                    onLineClick: { path, line in
+                        composerTarget = line.anchors.first.map { DiffFileAnchor(path: path, anchor: $0) }
+                    },
+                    onVisibleFileChange: { selectedPath = $0 },
+                    scrollTarget: scrollTarget
+                )
             }
         }
     }
@@ -75,7 +73,7 @@ struct ReviewScreen: View {
     private var overviewRow: some View {
         Button {
             selectedPath = nil
-            composerAnchor = nil
+            composerTarget = nil
         } label: {
             Label("Overview", systemImage: "list.bullet.rectangle")
                 .font(.callout.weight(.medium))
@@ -140,14 +138,16 @@ struct ReviewScreen: View {
 
     // MARK: Annotations
 
-    /// Everything pinned under this file's lines: existing threads (with
-    /// reply/resolve), pending batch comments, and the active composer.
-    private func annotations(for file: FileDiff) -> [DiffLineAnchor: AnyView] {
-        var sections: [DiffLineAnchor: [AnyView]] = [:]
+    /// Everything pinned under diff lines across all files: existing threads
+    /// (with reply/resolve/react), pending batch comments, and the composer.
+    private var annotations: [DiffFileAnchor: AnyView] {
+        var sections: [DiffFileAnchor: [AnyView]] = [:]
 
-        let threads = model.data.threads.filter { $0.path == file.path && $0.line != nil && !$0.isOutdated }
-        for thread in threads {
-            let anchor: DiffLineAnchor = thread.diffSide == "LEFT" ? .old(thread.line!) : .new(thread.line!)
+        for thread in model.data.threads where thread.line != nil && !thread.isOutdated {
+            let anchor = DiffFileAnchor(
+                path: thread.path,
+                anchor: thread.diffSide == "LEFT" ? .old(thread.line!) : .new(thread.line!)
+            )
             sections[anchor, default: []].append(AnyView(
                 ReviewThreadView(
                     thread: thread,
@@ -165,26 +165,26 @@ struct ReviewScreen: View {
             ))
         }
 
-        for comment in model.pendingComments where comment.path == file.path {
-            sections[comment.anchor, default: []].append(AnyView(
+        for comment in model.pendingComments {
+            sections[DiffFileAnchor(path: comment.path, anchor: comment.anchor), default: []].append(AnyView(
                 PendingCommentView(comment: comment) {
                     model.removePendingComment(id: comment.id)
                 }
             ))
         }
 
-        if let composerAnchor {
-            sections[composerAnchor, default: []].append(AnyView(
+        if let composerTarget {
+            sections[composerTarget, default: []].append(AnyView(
                 CommentComposerView(
                     onAddToReview: { body in
-                        model.addPendingComment(path: file.path, anchor: composerAnchor, body: body)
-                        self.composerAnchor = nil
+                        model.addPendingComment(path: composerTarget.path, anchor: composerTarget.anchor, body: body)
+                        self.composerTarget = nil
                     },
                     onCommentNow: { body in
-                        self.composerAnchor = nil
-                        Task { await model.addSingleComment(path: file.path, anchor: composerAnchor, body: body) }
+                        self.composerTarget = nil
+                        Task { await model.addSingleComment(path: composerTarget.path, anchor: composerTarget.anchor, body: body) }
                     },
-                    onCancel: { self.composerAnchor = nil }
+                    onCancel: { self.composerTarget = nil }
                 )
             ))
         }

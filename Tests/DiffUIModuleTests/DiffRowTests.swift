@@ -37,16 +37,16 @@ struct DiffRowTests {
         let rows = DiffRow.rows(for: file, annotatedAnchors: [.new(2), .old(2)])
 
         #expect(rows.count == 6)
-        guard case .line(_, _, let deleted, _) = rows[2], case .annotation(_, let oldAnchor) = rows[3],
-              case .line(_, _, let added, _) = rows[4], case .annotation(_, let newAnchor) = rows[5]
+        guard case .line(_, _, _, let deleted, _) = rows[2], case .annotation(_, let oldAnchor) = rows[3],
+              case .line(_, _, _, let added, _) = rows[4], case .annotation(_, let newAnchor) = rows[5]
         else {
             Issue.record("unexpected row structure")
             return
         }
         #expect(deleted.kind == .deletion)
-        #expect(oldAnchor == .old(2))
+        #expect(oldAnchor == DiffFileAnchor(path: "Example.swift", anchor: .old(2)))
         #expect(added.kind == .addition)
-        #expect(newAnchor == .new(2))
+        #expect(newAnchor == DiffFileAnchor(path: "Example.swift", anchor: .new(2)))
     }
 
     @Test("context lines answer to the new side first")
@@ -57,6 +57,31 @@ struct DiffRowTests {
             Issue.record("annotation row not inserted after context line")
             return
         }
-        #expect(anchor == .new(1))
+        #expect(anchor.anchor == .new(1))
+    }
+
+    @Test("multi-file rows interleave file headers and skip collapsed bodies")
+    func multiFileRows() {
+        let second = FileDiff(path: "Other.swift", status: .added, hunks: file.hunks)
+
+        let rows = DiffRow.rows(
+            for: [file, second],
+            collapsedFiles: [second.path],
+            annotatedAnchors: [:]
+        )
+
+        guard case .fileHeader(0, let first, false) = rows[0] else {
+            Issue.record("expected expanded header for the first file")
+            return
+        }
+        #expect(first.path == "Example.swift")
+
+        guard case .fileHeader(_, let collapsed, true) = rows[rows.count - 1] else {
+            Issue.record("expected collapsed trailing header")
+            return
+        }
+        #expect(collapsed.path == "Other.swift")
+        // header + hunk header + 3 lines + collapsed header
+        #expect(rows.count == 6)
     }
 }

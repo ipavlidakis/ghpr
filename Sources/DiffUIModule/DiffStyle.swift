@@ -13,6 +13,7 @@ enum DiffStyle {
     static let additionEmphasis = NSColor.systemGreen.withAlphaComponent(0.35)
     static let deletionEmphasis = NSColor.systemRed.withAlphaComponent(0.35)
     static let hunkHeaderBackground = NSColor.quaternaryLabelColor
+    static let fileHeaderBackground = NSColor.tertiaryLabelColor.withAlphaComponent(0.18)
 
     /// Xcode-ish token palette, adaptive to light and dark appearance.
     static func color(for kind: TokenKind) -> NSColor {

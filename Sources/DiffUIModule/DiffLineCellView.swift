@@ -31,10 +31,10 @@ final class DiffLineCellView: NSView {
                 string: header,
                 attributes: [.font: DiffStyle.codeFont, .foregroundColor: NSColor.secondaryLabelColor]
             )
-        case .line(_, _, let line, let counterpart):
+        case .line(_, _, _, let line, let counterpart):
             textField.attributedStringValue = Self.lineText(line, counterpart: counterpart, gutterDigits: gutterDigits, tokens: tokens)
-        case .annotation:
-            // Annotation rows use DiffAnnotationCellView, never this cell.
+        case .fileHeader, .annotation:
+            // These rows use their own cell types, never this one.
             textField.attributedStringValue = NSAttributedString()
         }
     }
