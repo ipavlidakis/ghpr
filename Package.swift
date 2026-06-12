@@ -14,8 +14,14 @@ let package = Package(
         .executableTarget(
             name: "ghpr",
             dependencies: [
-                .product(name: "ArgumentParser", package: "swift-argument-parser")
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                "AuthenticationModule"
             ]
+        ),
+        .target(name: "AuthenticationModule"),
+        .testTarget(
+            name: "AuthenticationModuleTests",
+            dependencies: ["AuthenticationModule"]
         )
     ]
 )

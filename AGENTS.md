@@ -8,9 +8,12 @@ Read `PLAN.md` first: it is the source of truth for scope, architecture decision
 - **Clear, one-directional data flow.** Data flows one way (CLI entry → modules → state → views). No back-channels, no shared mutable singletons, no two-way coupling between layers.
 - **Swift concurrency only.** Use async/await and structured concurrency everywhere. Never introduce GCD, locks, semaphores, or completion-handler APIs.
 - **Prefer actors.** Shared mutable state and external resources (Keychain, subprocesses, caches) always live behind actors — never any other synchronization mechanism.
-
+- **One file per type definition** Each class|struct|enum|protocol|extension gets its own file
+- **Name files format** should be simple, short and clear. If the content of file is an extension the format should be <ExtendedContent><Extension description>
+- **File locations** Modules are placed under Sources/Modules
 ## Conventions
 
 - Naming: prefer `Github` over a `GH` prefix (`GithubClient`, not `GHClient`).
+- Cross-module API uses the `package` access level, never `public` — everything ships in one package with one product.
 - Tests use Swift Testing (`import Testing`), never XCTest.
 - Every milestone must build (`swift build`) and pass its tests (`swift test`) before it is committed.
