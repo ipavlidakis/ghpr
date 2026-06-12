@@ -16,6 +16,12 @@ package actor GithubClient {
         self.apiBaseURL = apiBaseURL
     }
 
+    /// The user the token belongs to (drives dashboard filters).
+    package func authenticatedUser() async throws -> GithubUser {
+        let (data, _) = try await send(request(path: "user"))
+        return try JSONDecoder.github.decode(GithubUser.self, from: data)
+    }
+
     // MARK: Pull requests
 
     package func pullRequest(in repository: GithubRepository, number: Int) async throws -> GithubPullRequest {

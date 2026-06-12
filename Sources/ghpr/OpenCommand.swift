@@ -62,7 +62,7 @@ struct OpenCommand: ParsableCommand {
         guard let pullRequest = try await client.openPullRequest(in: repository, branch: branch) else {
             throw ValidationError("""
             No open pull request found for \(repository.fullName) branch '\(branch)'.
-            Once `ghpr dash` ships (milestone 7) you will be able to browse all open PRs.
+            Try `ghpr dash` to browse all open pull requests.
             """)
         }
         return GithubPullRequestReference(repository: repository, number: pullRequest.number)

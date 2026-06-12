@@ -10,15 +10,26 @@ import SwiftUI
 enum AppBootstrap {
     private static let delegate = AppDelegate()
     private static let frameGuard = WindowFrameGuard()
+    private static var cascadeOffset: CGFloat = 0
 
-    static func run(title: String, content: some View) {
+    /// Boots the app with its first window and blocks in the run loop.
+    static func run(title: String, size: NSSize = NSSize(width: 1280, height: 840), content: some View) {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         app.delegate = delegate
         app.mainMenu = mainMenu()
 
+        openWindow(title: title, size: size, content: content)
+
+        app.activate(ignoringOtherApps: true)
+        app.run()
+    }
+
+    /// Opens an additional window in the running app (dash → review).
+    /// The process keeps running until every window is closed.
+    static func openWindow(title: String, size: NSSize = NSSize(width: 1280, height: 840), content: some View) {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1280, height: 840),
+            contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
@@ -48,18 +59,13 @@ enum AppBootstrap {
         NSLayoutConstraint.activate(edges)
 
         window.contentView = container
-        window.setContentSize(NSSize(width: 1280, height: 840))
-        window.minSize = NSSize(width: 800, height: 500)
-        window.center()
+        window.minSize = NSSize(width: 700, height: 460)
         window.makeKeyAndOrderFront(nil)
 
-        app.activate(ignoringOtherApps: true)
-
-        let frame = centeredFrame(size: NSSize(width: 1280, height: 840))
+        let frame = centeredFrame(size: size).offsetBy(dx: cascadeOffset, dy: -cascadeOffset)
+        cascadeOffset = (cascadeOffset + 26).truncatingRemainder(dividingBy: 130)
         window.setFrame(frame, display: true)
         frameGuard.protect(window, frame: frame, for: .seconds(3))
-
-        app.run()
     }
 
     private static func centeredFrame(size: NSSize) -> NSRect {

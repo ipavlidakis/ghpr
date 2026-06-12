@@ -7,10 +7,8 @@ import Foundation
 /// intended frame, then stands down so the user can resize freely.
 @MainActor
 final class WindowFrameGuard {
-    private var observer: (any NSObjectProtocol)?
-
     func protect(_ window: NSWindow, frame: NSRect, for duration: Duration) {
-        observer = NotificationCenter.default.addObserver(
+        let observer = NotificationCenter.default.addObserver(
             forName: NSWindow.didResizeNotification,
             object: window,
             queue: .main
@@ -21,12 +19,9 @@ final class WindowFrameGuard {
             }
         }
 
-        Task { @MainActor [weak self] in
+        Task { @MainActor in
             try? await Task.sleep(for: duration)
-            if let observer = self?.observer {
-                NotificationCenter.default.removeObserver(observer)
-                self?.observer = nil
-            }
+            NotificationCenter.default.removeObserver(observer)
         }
     }
 }

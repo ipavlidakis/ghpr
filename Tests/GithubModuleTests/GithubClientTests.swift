@@ -106,6 +106,16 @@ struct GithubClientTests {
         #expect(url.contains("pulls/908/commits"))
     }
 
+    @Test("authenticatedUser decodes the /user payload")
+    func authenticatedUser() async throws {
+        let transport = StubTransport(data: Data(#"{"login":"ipavlidakis","avatar_url":"https://a.example/u.png"}"#.utf8))
+
+        let user = try await client(transport).authenticatedUser()
+
+        #expect(user.login == "ipavlidakis")
+        #expect(await transport.requests.first?.url?.absoluteString == "https://api.github.com/user")
+    }
+
     @Test("fileContent requests raw contents at the ref")
     func fileContent() async throws {
         let transport = StubTransport(data: Data("let a = 1\n".utf8))
