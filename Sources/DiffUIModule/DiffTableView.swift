@@ -20,7 +20,7 @@ struct DiffTableView: NSViewRepresentable {
     let rows: [DiffRow]
     let gutterDigits: Int
     let highlightsByFile: [String: FileSyntaxHighlights]
-    let annotations: [DiffFileAnchor: AnyView]
+    let annotations: [DiffFileAnchor: DiffAnnotation]
     var onLineClick: ((String, DiffLine) -> Void)?
     var onFileHeaderClick: ((String) -> Void)?
     var onViewedToggle: ((String, Bool) -> Void)?
@@ -382,8 +382,8 @@ struct DiffTableView: NSViewRepresentable {
             if let cell = annotationCells[anchor] {
                 return cell
             }
-            guard let content = view?.annotations[anchor] else { return nil }
-            let cell = DiffAnnotationCellView(content: content)
+            guard let annotation = view?.annotations[anchor] else { return nil }
+            let cell = DiffAnnotationCellView(content: annotation.content)
             annotationCells[anchor] = cell
             return cell
         }

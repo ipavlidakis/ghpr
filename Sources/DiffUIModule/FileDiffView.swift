@@ -71,9 +71,9 @@ package struct FileDiffView: View {
         }
     }
 
-    private var fileAnnotations: [DiffFileAnchor: AnyView] {
+    private var fileAnnotations: [DiffFileAnchor: DiffAnnotation] {
         Dictionary(uniqueKeysWithValues: annotations.map { anchor, content in
-            (DiffFileAnchor(path: fileDiff.path, anchor: anchor), content)
+            (DiffFileAnchor(path: fileDiff.path, anchor: anchor), DiffAnnotation(version: 0, content: content))
         })
     }
 }

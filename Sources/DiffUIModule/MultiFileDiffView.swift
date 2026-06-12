@@ -8,7 +8,7 @@ import SwiftUI
 package struct MultiFileDiffView: View {
     private let files: [FileDiff]
     private let highlighter: SyntaxHighlighter
-    private let annotations: [DiffFileAnchor: AnyView]
+    private let annotations: [DiffFileAnchor: DiffAnnotation]
     private let viewedFiles: Set<String>
     private let collapsedFiles: Set<String>
     private let onViewedToggle: ((String, Bool) -> Void)?
@@ -26,7 +26,7 @@ package struct MultiFileDiffView: View {
     package init(
         files: [FileDiff],
         highlighter: SyntaxHighlighter,
-        annotations: [DiffFileAnchor: AnyView] = [:],
+        annotations: [DiffFileAnchor: DiffAnnotation] = [:],
         viewedFiles: Set<String> = [],
         collapsedFiles: Set<String> = [],
         onViewedToggle: ((String, Bool) -> Void)? = nil,

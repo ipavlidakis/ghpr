@@ -252,19 +252,23 @@ struct ReviewScreen: View {
 
     /// Everything pinned under diff lines across all files: existing threads
     /// (with reply/resolve/react), pending batch comments, and the composer.
-    private var annotations: [DiffFileAnchor: AnyView] {
+    /// Each anchor carries a version derived from whatever affects its
+    /// rendering, so the diff table knows when to re-measure.
+    private var annotations: [DiffFileAnchor: DiffAnnotation] {
         var sections: [DiffFileAnchor: [AnyView]] = [:]
+        var versions: [DiffFileAnchor: [String]] = [:]
 
         for thread in model.data.threads where thread.line != nil && !thread.isOutdated {
             let anchor = DiffFileAnchor(
                 path: thread.path,
                 anchor: thread.diffSide == "LEFT" ? .old(thread.line!) : .new(thread.line!)
             )
+            let isCollapsed = thread.isResolved != toggledThreads.contains(thread.id)
             sections[anchor, default: []].append(AnyView(
                 ReviewThreadView(
                     thread: thread,
                     pullRequestAuthor: model.data.pullRequest.user?.login,
-                    isCollapsed: thread.isResolved != toggledThreads.contains(thread.id),
+                    isCollapsed: isCollapsed,
                     onToggleCollapse: {
                         if !toggledThreads.insert(thread.id).inserted {
                             toggledThreads.remove(thread.id)
@@ -275,14 +279,20 @@ struct ReviewScreen: View {
                     onReact: { comment, reaction in Task { await model.react(to: comment, with: reaction) } }
                 )
             ))
+            let reactionCount = thread.comments.reduce(0) { $0 + $1.reactions.reduce(0) { $0 + $1.count } }
+            versions[anchor, default: []].append(
+                "thread:\(thread.id):\(thread.isResolved):\(isCollapsed):\(thread.comments.count):\(reactionCount)"
+            )
         }
 
         for comment in model.pendingComments {
-            sections[DiffFileAnchor(path: comment.path, anchor: comment.anchor), default: []].append(AnyView(
+            let anchor = DiffFileAnchor(path: comment.path, anchor: comment.anchor)
+            sections[anchor, default: []].append(AnyView(
                 PendingCommentView(comment: comment) {
                     model.removePendingComment(id: comment.id)
                 }
             ))
+            versions[anchor, default: []].append("pending:\(comment.id)")
         }
 
         if let composerTarget {
@@ -299,20 +309,26 @@ struct ReviewScreen: View {
                     onCancel: { self.composerTarget = nil }
                 )
             ))
+            versions[composerTarget, default: []].append("composer")
         }
 
-        return sections.mapValues { views in
-            AnyView(
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(views.enumerated()), id: \.offset) { _, view in
-                        view
+        return sections.reduce(into: [:]) { result, entry in
+            var hasher = Hasher()
+            hasher.combine(versions[entry.key] ?? [])
+            result[entry.key] = DiffAnnotation(
+                version: hasher.finalize(),
+                content: AnyView(
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(entry.value.enumerated()), id: \.offset) { _, view in
+                            view
+                        }
                     }
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                // Fill the hosted cell's width so cards pin to the leading
-                // edge instead of centering.
-                .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    // Fill the hosted cell's width so cards pin to the
+                    // leading edge instead of centering.
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                )
             )
         }
     }
