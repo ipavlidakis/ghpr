@@ -21,6 +21,8 @@ struct DiffTableView: NSViewRepresentable {
     let gutterDigits: Int
     let highlightsByFile: [String: FileSyntaxHighlights]
     let annotations: [DiffFileAnchor: DiffAnnotation]
+    /// Body-replacing content per file path (image comparisons).
+    var filePreviews: [String: DiffAnnotation] = [:]
     var onLineClick: ((String, DiffLine) -> Void)?
     var onFileHeaderClick: ((String) -> Void)?
     var onViewedToggle: ((String, Bool) -> Void)?
@@ -99,6 +101,7 @@ struct DiffTableView: NSViewRepresentable {
 
         private var view: DiffTableView?
         private var annotationCells: [DiffFileAnchor: DiffAnnotationCellView] = [:]
+        private var previewCells: [String: DiffAnnotationCellView] = [:]
         private var lastReportedFile: String?
         private var lastScrollToken: UUID?
         private var lastReloadFingerprint: Int?
@@ -121,6 +124,7 @@ struct DiffTableView: NSViewRepresentable {
             if fingerprint != oldFingerprint {
                 lastReloadFingerprint = fingerprint
                 annotationCells.removeAll()
+                previewCells.removeAll()
                 // Row indices shift when content changes.
                 selectedRowRange = nil
                 (tableView as? DiffNSTableView)?.clearLineSelection()
@@ -319,6 +323,8 @@ struct DiffTableView: NSViewRepresentable {
                 DiffStyle.rowHeight
             case .annotation(_, let anchor):
                 annotationCell(for: anchor).map { $0.height(forWidth: tableView.bounds.width) + 8 } ?? 0
+            case .filePreview(_, let path):
+                previewCell(for: path).map { $0.height(forWidth: tableView.bounds.width) } ?? 0
             }
         }
 
@@ -371,6 +377,8 @@ struct DiffTableView: NSViewRepresentable {
                 return cell
             case .annotation(_, let anchor):
                 return annotationCell(for: anchor)
+            case .filePreview(_, let path):
+                return previewCell(for: path)
             }
         }
 
@@ -388,7 +396,7 @@ struct DiffTableView: NSViewRepresentable {
                 DiffStyle.fileHeaderBackground
             case .hunkHeader:
                 DiffStyle.hunkHeaderBackground
-            case .annotation:
+            case .annotation, .filePreview:
                 nil
             case .line(_, _, _, let line, _):
                 switch line.kind {
@@ -408,6 +416,16 @@ struct DiffTableView: NSViewRepresentable {
             guard let annotation = view?.annotations[anchor] else { return nil }
             let cell = DiffAnnotationCellView(content: annotation.content)
             annotationCells[anchor] = cell
+            return cell
+        }
+
+        private func previewCell(for path: String) -> DiffAnnotationCellView? {
+            if let cell = previewCells[path] {
+                return cell
+            }
+            guard let preview = view?.filePreviews[path] else { return nil }
+            let cell = DiffAnnotationCellView(content: preview.content)
+            previewCells[path] = cell
             return cell
         }
     }

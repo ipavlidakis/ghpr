@@ -55,13 +55,18 @@ package actor GithubClient {
 
     /// The raw contents of a file at a specific ref.
     package func fileContent(in repository: GithubRepository, path: String, ref: String) async throws -> String {
+        String(decoding: try await fileData(in: repository, path: path, ref: ref), as: UTF8.self)
+    }
+
+    /// The raw bytes of a file at a specific ref (binary files).
+    package func fileData(in repository: GithubRepository, path: String, ref: String) async throws -> Data {
         let request = request(
             path: "repos/\(repository.fullName)/contents/\(path)",
             query: [URLQueryItem(name: "ref", value: ref)],
             accept: "application/vnd.github.raw+json"
         )
         let (data, _) = try await send(request)
-        return String(decoding: data, as: UTF8.self)
+        return data
     }
 
     // MARK: Checks

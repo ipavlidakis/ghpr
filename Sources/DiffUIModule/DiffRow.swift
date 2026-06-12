@@ -10,6 +10,8 @@ enum DiffRow: Identifiable {
     case line(index: Int, file: String, location: LineLocation, line: DiffLine, counterpart: String?)
     /// Caller-provided content (review threads) pinned under a line.
     case annotation(index: Int, anchor: DiffFileAnchor)
+    /// Caller-provided content replacing a file's body (image comparisons).
+    case filePreview(index: Int, path: String)
 
     var id: Int {
         switch self {
@@ -17,6 +19,7 @@ enum DiffRow: Identifiable {
         case .hunkHeader(let index, _): index
         case .line(let index, _, _, _, _): index
         case .annotation(let index, _): index
+        case .filePreview(let index, _): index
         }
     }
 
@@ -27,23 +30,26 @@ enum DiffRow: Identifiable {
         case .hunkHeader: nil
         case .line(_, let file, _, _, _): file
         case .annotation(_, let anchor): anchor.path
+        case .filePreview(_, let path): path
         }
     }
 
     /// Rows for a single file's body (no file header).
     static func rows(for fileDiff: FileDiff, annotatedAnchors: Set<DiffLineAnchor> = []) -> [DiffRow] {
         var rows: [DiffRow] = []
-        appendBody(of: fileDiff, annotatedAnchors: annotatedAnchors, to: &rows)
+        appendBody(of: fileDiff, annotatedAnchors: annotatedAnchors, previewPaths: [], to: &rows)
         return rows
     }
 
     /// Rows for a continuous multi-file table: each file contributes a header
-    /// row plus, when not collapsed, its body rows.
+    /// row plus, when not collapsed, its body rows. Files in `previewPaths`
+    /// render a single preview row as their body instead of diff lines.
     static func rows(
         for files: [FileDiff],
         collapsedFiles: Set<String>,
         viewedFiles: Set<String>,
-        annotatedAnchors: [String: Set<DiffLineAnchor>]
+        annotatedAnchors: [String: Set<DiffLineAnchor>],
+        previewPaths: Set<String> = []
     ) -> [DiffRow] {
         var rows: [DiffRow] = []
         for file in files {
@@ -55,7 +61,12 @@ enum DiffRow: Identifiable {
                 isViewed: viewedFiles.contains(file.path)
             ))
             if !isCollapsed {
-                appendBody(of: file, annotatedAnchors: annotatedAnchors[file.path] ?? [], to: &rows)
+                appendBody(
+                    of: file,
+                    annotatedAnchors: annotatedAnchors[file.path] ?? [],
+                    previewPaths: previewPaths,
+                    to: &rows
+                )
             }
         }
         return rows
@@ -64,8 +75,13 @@ enum DiffRow: Identifiable {
     private static func appendBody(
         of fileDiff: FileDiff,
         annotatedAnchors: Set<DiffLineAnchor>,
+        previewPaths: Set<String>,
         to rows: inout [DiffRow]
     ) {
+        if previewPaths.contains(fileDiff.path) {
+            rows.append(.filePreview(index: rows.count, path: fileDiff.path))
+            return
+        }
         for (hunkIndex, hunk) in fileDiff.hunks.enumerated() {
             rows.append(.hunkHeader(index: rows.count, header: hunk.header))
             let counterparts = hunk.intralineCounterparts

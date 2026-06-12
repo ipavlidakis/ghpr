@@ -17,6 +17,7 @@ struct ReviewScreen: View {
     @State private var viewedFiles: Set<String> = []
     @State private var collapsedFiles: Set<String> = []
     @State private var expandedFiles: [String: FileDiff] = [:]
+    @State private var imageDiffs: [String: ImageDiffSides] = [:]
 
     private let viewedStore = ViewedFilesStore()
     @State private var scrollTarget: DiffScrollTarget?
@@ -49,6 +50,15 @@ struct ReviewScreen: View {
             let restored = await viewedStore.viewedPaths(in: pullRequestKey, matching: contentDigests)
             viewedFiles = restored
             collapsedFiles.formUnion(restored)
+        }
+        .task(id: model.data.pullRequest.head.sha) {
+            // Fetch both versions of every changed image for 2-up previews.
+            for file in model.data.files where file.isBinary && ImageDiffView.supports(file.path) {
+                if Task.isCancelled { return }
+                if imageDiffs[file.path] == nil {
+                    imageDiffs[file.path] = await model.imageDiff(for: file)
+                }
+            }
         }
     }
 
@@ -98,6 +108,7 @@ struct ReviewScreen: View {
                 files: displayFiles,
                 highlighter: highlighter,
                 annotations: annotations,
+                filePreviews: filePreviews,
                 viewedFiles: viewedFiles,
                 collapsedFiles: collapsedFiles,
                 onViewedToggle: { path, isViewed in
@@ -132,6 +143,20 @@ struct ReviewScreen: View {
                 fileActions: fileActions,
                 onVisibleFileChange: { selectedPath = $0 },
                 scrollTarget: scrollTarget
+            )
+        }
+    }
+
+    /// 2-up image comparisons keyed by path, versioned by their bytes so
+    /// the table re-measures when a fetch completes.
+    private var filePreviews: [String: DiffAnnotation] {
+        imageDiffs.reduce(into: [:]) { result, entry in
+            var hasher = Hasher()
+            hasher.combine(entry.value.old?.count ?? -1)
+            hasher.combine(entry.value.new?.count ?? -1)
+            result[entry.key] = DiffAnnotation(
+                version: hasher.finalize(),
+                content: AnyView(ImageDiffView(sides: entry.value))
             )
         }
     }

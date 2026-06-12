@@ -67,7 +67,7 @@ final class DiffLineCellView: NSView {
             )
         case .line(_, _, _, let line, let counterpart):
             textField.attributedStringValue = Self.lineText(line, counterpart: counterpart, gutterDigits: gutterDigits, tokens: tokens)
-        case .fileHeader, .annotation:
+        case .fileHeader, .annotation, .filePreview:
             // These rows use their own cell types, never this one.
             textField.attributedStringValue = NSAttributedString()
         }

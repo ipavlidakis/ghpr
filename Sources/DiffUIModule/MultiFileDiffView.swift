@@ -9,6 +9,7 @@ package struct MultiFileDiffView: View {
     private let files: [FileDiff]
     private let highlighter: SyntaxHighlighter
     private let annotations: [DiffFileAnchor: DiffAnnotation]
+    private let filePreviews: [String: DiffAnnotation]
     private let viewedFiles: Set<String>
     private let collapsedFiles: Set<String>
     private let onViewedToggle: ((String, Bool) -> Void)?
@@ -27,6 +28,7 @@ package struct MultiFileDiffView: View {
         files: [FileDiff],
         highlighter: SyntaxHighlighter,
         annotations: [DiffFileAnchor: DiffAnnotation] = [:],
+        filePreviews: [String: DiffAnnotation] = [:],
         viewedFiles: Set<String> = [],
         collapsedFiles: Set<String> = [],
         onViewedToggle: ((String, Bool) -> Void)? = nil,
@@ -41,6 +43,7 @@ package struct MultiFileDiffView: View {
         self.files = files
         self.highlighter = highlighter
         self.annotations = annotations
+        self.filePreviews = filePreviews
         self.viewedFiles = viewedFiles
         self.collapsedFiles = collapsedFiles
         self.onViewedToggle = onViewedToggle
@@ -60,11 +63,13 @@ package struct MultiFileDiffView: View {
                 for: files,
                 collapsedFiles: collapsedFiles,
                 viewedFiles: viewedFiles,
-                annotatedAnchors: annotatedAnchors
+                annotatedAnchors: annotatedAnchors,
+                previewPaths: Set(filePreviews.keys)
             ),
             gutterDigits: gutterDigits,
             highlightsByFile: highlightsByFile,
             annotations: annotations,
+            filePreviews: filePreviews,
             onLineClick: onLineClick,
             onFileHeaderClick: { path in
                 onCollapseToggle?(path)

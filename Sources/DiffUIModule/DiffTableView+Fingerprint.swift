@@ -21,6 +21,7 @@ extension DiffTableView {
         // Content versions matter: a collapsed thread changes the view and
         // its height without changing the anchor set.
         hasher.combine(annotations.map { "\($0.key.path)|\($0.key.anchor)|\($0.value.version)" }.sorted())
+        hasher.combine(filePreviews.map { "\($0.key)|\($0.value.version)" }.sorted())
         return hasher.finalize()
     }
 }

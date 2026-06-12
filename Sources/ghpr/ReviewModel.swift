@@ -122,6 +122,22 @@ final class ReviewModel {
         }
     }
 
+    /// Both versions of a changed image, fetched in parallel. Failures
+    /// degrade to a missing side — previews never raise the error alert.
+    func imageDiff(for file: FileDiff) async -> ImageDiffSides {
+        let repository = data.reference.repository
+        let oldPath = if case .renamed(let from) = file.status { from } else { file.path }
+
+        async let old = file.status == .added
+            ? nil
+            : try? client.fileData(in: repository, path: oldPath, ref: data.pullRequest.base.sha)
+        async let new = file.status == .deleted
+            ? nil
+            : try? client.fileData(in: repository, path: file.path, ref: data.pullRequest.head.sha)
+
+        return ImageDiffSides(old: await old, new: await new)
+    }
+
     // MARK: Plumbing
 
     /// Runs a write, surfaces any error, and refreshes the window on success.
