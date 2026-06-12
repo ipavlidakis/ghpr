@@ -4,6 +4,10 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.1.2)"
+        required: true
 
 permissions:
   contents: write
@@ -13,6 +17,29 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Manual dispatch owns the whole flow: bump the source version,
+      # commit to main, and tag. (Tags pushed with GITHUB_TOKEN do not
+      # re-trigger this workflow, so there is no recursion.)
+      - name: Bump version and tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          V="${{ steps.version.outputs.version }}"
+          sed -i '' -E "s/version: \"[0-9.]+\"/version: \"$V\"/" Sources/ghpr/GithubPRCommand.swift
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "ghpr $V" || echo "version already $V"
+          git tag "v$V"
+          git push origin HEAD:main "v$V"
 
       # The default toolchain lags; the package needs Swift 6.2+.
       - name: Select latest Xcode
@@ -32,14 +59,27 @@ jobs:
             spm-${{ runner.os }}-
 
       - name: Build distribution tarball
-        run: make dist VERSION=${GITHUB_REF_NAME#v}
+        run: make dist VERSION=${{ steps.version.outputs.version }}
 
       - name: Create release and upload asset
-        if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
-        # Tolerate manually-created releases: create if missing, then upload
-        # without clobbering existing assets.
         run: |
-          gh release create "$GITHUB_REF_NAME" --generate-notes || true
-          gh release upload "$GITHUB_REF_NAME" dist/*.tar.gz || true
+          V="${{ steps.version.outputs.version }}"
+          gh release create "v$V" dist/*.tar.gz --title "ghpr $V" --generate-notes \
+            || gh release upload "v$V" dist/*.tar.gz
+      - name: Update Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          V="${{ steps.version.outputs.version }}"
+          SHA=$(shasum -a 256 dist/*.tar.gz | cut -d' ' -f1)
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/ipavlidakis/homebrew-tap.git" tap
+          cd tap
+          sed -i '' -E "s|download/v[0-9.]+/ghpr-v[0-9.]+|download/v${V}/ghpr-v${V}|" Formula/ghpr.rb
+          sed -i '' -E "s|sha256 \"[a-f0-9]+\"|sha256 \"${SHA}\"|" Formula/ghpr.rb
+          sed -i '' -E "s|version \"[0-9.]+\"|version \"${V}\"|" Formula/ghpr.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "ghpr ${V}"
+          git push
