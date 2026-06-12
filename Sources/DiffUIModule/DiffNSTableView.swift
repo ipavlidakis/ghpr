@@ -65,6 +65,26 @@ final class DiffNSTableView: NSTableView {
         onCopySelection?()
     }
 
+    /// The standard text-selection context menu: right-clicking inside the
+    /// selection offers Copy; right-clicking an unselected code line first
+    /// moves the selection there, like any macOS text view.
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let index = row(at: convert(event.locationInWindow, from: nil))
+        guard index >= 0, isSelectableRow?(index) == true else {
+            return super.menu(for: event)
+        }
+
+        if selectedRange?.contains(index) != true {
+            selectedRange = index...index
+        }
+
+        let menu = NSMenu()
+        let copyItem = NSMenuItem(title: "Copy", action: #selector(copy(_:)), keyEquivalent: "")
+        copyItem.target = self
+        menu.addItem(copyItem)
+        return menu
+    }
+
     override func cancelOperation(_ sender: Any?) {
         clearLineSelection()
     }
