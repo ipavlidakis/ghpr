@@ -13,9 +13,10 @@ import SwiftUI
 struct DiffTableView: NSViewRepresentable {
     let rows: [DiffRow]
     let gutterDigits: Int
+    let highlights: FileSyntaxHighlights?
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(rows: rows, gutterDigits: gutterDigits)
+        Coordinator(rows: rows, gutterDigits: gutterDigits, highlights: highlights)
     }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -38,7 +39,7 @@ struct DiffTableView: NSViewRepresentable {
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        context.coordinator.update(rows: rows, gutterDigits: gutterDigits)
+        context.coordinator.update(rows: rows, gutterDigits: gutterDigits, highlights: highlights)
         (scrollView.documentView as? NSTableView)?.reloadData()
     }
 
@@ -51,15 +52,18 @@ struct DiffTableView: NSViewRepresentable {
 
         private var rows: [DiffRow]
         private var gutterDigits: Int
+        private var highlights: FileSyntaxHighlights?
 
-        init(rows: [DiffRow], gutterDigits: Int) {
+        init(rows: [DiffRow], gutterDigits: Int, highlights: FileSyntaxHighlights?) {
             self.rows = rows
             self.gutterDigits = gutterDigits
+            self.highlights = highlights
         }
 
-        func update(rows: [DiffRow], gutterDigits: Int) {
+        func update(rows: [DiffRow], gutterDigits: Int, highlights: FileSyntaxHighlights?) {
             self.rows = rows
             self.gutterDigits = gutterDigits
+            self.highlights = highlights
         }
 
         func numberOfRows(in tableView: NSTableView) -> Int {
@@ -74,7 +78,10 @@ struct DiffTableView: NSViewRepresentable {
                 cell = DiffLineCellView()
                 cell.identifier = Self.cellIdentifier
             }
-            cell.configure(with: rows[index], gutterDigits: gutterDigits)
+            let row = rows[index]
+            let tokens: [SyntaxToken] =
+                if case .line(_, let location, _, _) = row { highlights?[location] ?? [] } else { [] }
+            cell.configure(with: row, gutterDigits: gutterDigits, tokens: tokens)
             return cell
         }
 
@@ -90,7 +97,7 @@ struct DiffTableView: NSViewRepresentable {
             rowView.tint = switch rows[index] {
             case .hunkHeader:
                 DiffStyle.hunkHeaderBackground
-            case .line(_, let line, _):
+            case .line(_, _, let line, _):
                 switch line.kind {
                 case .context: nil
                 case .addition: DiffStyle.additionBackground

@@ -12,13 +12,16 @@ import SwiftUI
 /// with the `NSTableView` row host (see PLAN decision log).
 package struct FileDiffView: View {
     private let fileDiff: FileDiff
+    private let highlighter: SyntaxHighlighter
     private let rows: [DiffRow]
     private let gutterDigits: Int
 
     @State private var isCollapsed = false
+    @State private var highlights: FileSyntaxHighlights?
 
-    package init(fileDiff: FileDiff) {
+    package init(fileDiff: FileDiff, highlighter: SyntaxHighlighter) {
         self.fileDiff = fileDiff
+        self.highlighter = highlighter
         rows = DiffRow.rows(for: fileDiff)
         gutterDigits = DiffStyle.gutterDigits(for: fileDiff)
     }
@@ -36,6 +39,9 @@ package struct FileDiffView: View {
             RoundedRectangle(cornerRadius: 6)
                 .strokeBorder(.separator, lineWidth: 1)
         )
+        .task(id: fileDiff.path) {
+            highlights = await highlighter.highlights(for: fileDiff)
+        }
     }
 
     @ViewBuilder
@@ -46,7 +52,7 @@ package struct FileDiffView: View {
                 .foregroundStyle(.secondary)
                 .padding(8)
         } else {
-            DiffTableView(rows: rows, gutterDigits: gutterDigits)
+            DiffTableView(rows: rows, gutterDigits: gutterDigits, highlights: highlights)
         }
     }
 }

@@ -24,12 +24,39 @@ enum AppBootstrap {
         )
         window.title = title
         window.isReleasedWhenClosed = false
+
+        let hostingView = NSHostingView(rootView: content)
+        // The window owns its size; otherwise SwiftUI's ideal size can
+        // collapse the frame on launch.
+        hostingView.sizingOptions = []
+        window.contentView = hostingView
+        window.setContentSize(NSSize(width: 1280, height: 840))
+        window.minSize = NSSize(width: 800, height: 500)
         window.center()
-        window.contentView = NSHostingView(rootView: content)
         window.makeKeyAndOrderFront(nil)
 
         app.activate(ignoringOtherApps: true)
+
+        // SwiftUI's initial layout pass can shrink the window to the content's
+        // minimum; re-assert the intended frame on the first run-loop turn.
+        Task { @MainActor in
+            window.setFrame(Self.centeredFrame(size: NSSize(width: 1280, height: 840)), display: true)
+        }
+
         app.run()
+    }
+
+    private static func centeredFrame(size: NSSize) -> NSRect {
+        guard let screen = NSScreen.main else {
+            return NSRect(origin: .zero, size: size)
+        }
+        let visible = screen.visibleFrame
+        return NSRect(
+            x: visible.midX - size.width / 2,
+            y: visible.midY - size.height / 2,
+            width: size.width,
+            height: size.height
+        )
     }
 
     /// Just enough menu for a usable window: quit, close, and the edit

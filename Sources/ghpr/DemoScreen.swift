@@ -7,6 +7,7 @@ import SwiftUI
 struct DemoScreen: View {
     private let files: [FileDiff]
     private let items: [FileListItem]
+    private let highlighter = SyntaxHighlighter()
 
     @State private var selectedPath: String?
 
@@ -27,7 +28,7 @@ struct DemoScreen: View {
             .navigationSplitViewColumnWidth(min: 240, ideal: 320)
         } detail: {
             if let selectedFile {
-                FileDiffView(fileDiff: selectedFile)
+                FileDiffView(fileDiff: selectedFile, highlighter: highlighter)
                     .padding(12)
                     .id(selectedFile.path)
             } else {

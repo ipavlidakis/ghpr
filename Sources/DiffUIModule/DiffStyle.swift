@@ -14,6 +14,20 @@ enum DiffStyle {
     static let deletionEmphasis = NSColor.systemRed.withAlphaComponent(0.35)
     static let hunkHeaderBackground = NSColor.quaternaryLabelColor
 
+    /// Xcode-ish token palette, adaptive to light and dark appearance.
+    static func color(for kind: TokenKind) -> NSColor {
+        switch kind {
+        case .keyword: .systemPink
+        case .string: .systemRed
+        case .comment: .secondaryLabelColor
+        case .number: .systemPurple
+        case .type: .systemTeal
+        case .function: .systemIndigo
+        case .property: .systemBlue
+        case .attribute: .systemOrange
+        }
+    }
+
     /// Gutter column width in characters for this file's highest line number.
     nonisolated static func gutterDigits(for fileDiff: FileDiff) -> Int {
         let highestLineNumber = fileDiff.hunks.reduce(1) {

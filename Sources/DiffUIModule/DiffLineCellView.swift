@@ -24,19 +24,19 @@ final class DiffLineCellView: NSView {
         fatalError("not used")
     }
 
-    func configure(with row: DiffRow, gutterDigits: Int) {
+    func configure(with row: DiffRow, gutterDigits: Int, tokens: [SyntaxToken]) {
         switch row {
         case .hunkHeader(_, let header):
             textField.attributedStringValue = NSAttributedString(
                 string: header,
                 attributes: [.font: DiffStyle.codeFont, .foregroundColor: NSColor.secondaryLabelColor]
             )
-        case .line(_, let line, let counterpart):
-            textField.attributedStringValue = Self.lineText(line, counterpart: counterpart, gutterDigits: gutterDigits)
+        case .line(_, _, let line, let counterpart):
+            textField.attributedStringValue = Self.lineText(line, counterpart: counterpart, gutterDigits: gutterDigits, tokens: tokens)
         }
     }
 
-    private static func lineText(_ line: DiffLine, counterpart: String?, gutterDigits: Int) -> NSAttributedString {
+    private static func lineText(_ line: DiffLine, counterpart: String?, gutterDigits: Int, tokens: [SyntaxToken]) -> NSAttributedString {
         let text = NSMutableAttributedString()
 
         let gutter = "\(padded(line.oldLineNumber, to: gutterDigits)) \(padded(line.newLineNumber, to: gutterDigits))"
@@ -59,6 +59,11 @@ final class DiffLineCellView: NSView {
             string: line.text,
             attributes: [.font: DiffStyle.codeFont, .foregroundColor: NSColor.labelColor]
         )
+        let codeLength = line.text.utf16.count
+        for token in tokens {
+            guard let clamped = token.range.intersection(NSRange(location: 0, length: codeLength)) else { continue }
+            code.addAttribute(.foregroundColor, value: DiffStyle.color(for: token.kind), range: clamped)
+        }
         for range in emphasisRanges(for: line, counterpart: counterpart) {
             code.addAttribute(
                 .backgroundColor,
