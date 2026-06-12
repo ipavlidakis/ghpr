@@ -69,4 +69,95 @@ struct MarkdownBlockTests {
             .paragraph("after"),
         ])
     }
+
+    @Test("pipe tables parse into header and rows")
+    func table() {
+        let text = """
+        ## SDK Size
+        |title|develop|branch|diff|status|
+        |-|-|-|-|-|
+        |StreamVideo|10.05 MB|10.05 MB|0 KB|🟢|
+        |StreamVideoSwiftUI|2.45 MB|2.45 MB|0 KB|🟢|
+        """
+
+        let blocks = MarkdownBlock.parse(text)
+
+        #expect(blocks == [
+            .heading(level: 2, text: "SDK Size"),
+            .table(
+                header: ["title", "develop", "branch", "diff", "status"],
+                rows: [
+                    ["StreamVideo", "10.05 MB", "10.05 MB", "0 KB", "🟢"],
+                    ["StreamVideoSwiftUI", "2.45 MB", "2.45 MB", "0 KB", "🟢"],
+                ]
+            ),
+        ])
+    }
+
+    @Test("tables with padded separator cells also parse")
+    func tableLooseSeparator() {
+        let text = """
+        | a | b |
+        | --- | :-: |
+        | 1 | 2 |
+        """
+
+        #expect(MarkdownBlock.parse(text) == [
+            .table(header: ["a", "b"], rows: [["1", "2"]])
+        ])
+    }
+
+    @Test("details blocks nest, strip blockquote tags, and keep their summary")
+    func details() {
+        let text = """
+        <!-- This is an auto-generated comment -->
+        Intro paragraph.
+
+        <details>
+        <summary>🧹 Nitpick comments (1)</summary><blockquote>
+
+        <details>
+        <summary>Tests/ScreenSharingView_Tests.swift (1)</summary><blockquote>
+
+        29-37: Use the same background token.
+
+        </blockquote></details>
+
+        </blockquote></details>
+        """
+
+        let blocks = MarkdownBlock.parse(text)
+
+        guard blocks.count == 2, case .details(let summary, let inner) = blocks[1] else {
+            Issue.record("expected a details block, got \(blocks)")
+            return
+        }
+        #expect(blocks[0] == .paragraph("Intro paragraph."))
+        #expect(summary == "🧹 Nitpick comments (1)")
+
+        guard case .details(let nestedSummary, let nestedBlocks) = inner.first(where: {
+            if case .details = $0 { true } else { false }
+        }) ?? .rule else {
+            Issue.record("expected a nested details block, got \(inner)")
+            return
+        }
+        #expect(nestedSummary == "Tests/ScreenSharingView_Tests.swift (1)")
+        #expect(nestedBlocks.contains(.paragraph("29-37: Use the same background token.")))
+    }
+
+    @Test("multi-line HTML comments disappear")
+    func htmlComments() {
+        let text = """
+        before
+        <!-- hidden
+        still hidden -->
+        after
+        """
+
+        // Adjacent lines join into one paragraph, exactly as if the
+        // comment lines were never there.
+        #expect(MarkdownBlock.parse(text) == [
+            .paragraph("before\nafter")
+        ])
+    }
 }
