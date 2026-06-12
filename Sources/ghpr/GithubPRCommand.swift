@@ -8,7 +8,7 @@ struct GithubPRCommand: AsyncParsableCommand {
         commandName: "ghpr",
         abstract: "Review GitHub pull requests in a native macOS window, straight from your terminal.",
         version: "0.1.0",
-        subcommands: [AuthCommand.self]
+        subcommands: [AuthCommand.self, DemoCommand.self]
     )
 
     func run() async throws {

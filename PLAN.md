@@ -11,6 +11,7 @@ This document is the implementation plan and the source of truth for scope and a
 - **No `gh` CLI dependency.** The tool talks to the GitHub API directly (URLSession). `gh` is at most an optional, silent token source.
 - **Zero git writes.** ghpr never checks out, fetches, or mutates a repository. Only read-only git queries (origin URL, current branch). Reviewing is fully remote via the API (patch, file contents at SHAs, threads, checks).
 - **Diff computation is not our job.** The GitHub API serves the unified patch (`Accept: application/vnd.github.diff`); we parse and render it.
+- **Row host decision (milestone 4 spike, verified):** SwiftUI `LazyVStack` rows, no `NSTableView` wrapper. The unbundled `NSApplication`-from-CLI window works as designed (no `.app` wrapper needed) and renders a 161-file / 20k-line fixture instantly at ~110 MB RSS. Revisit only if huge single files jank — the first lever is computing intra-line emphasis lazily per visible row instead of eagerly per file in `DiffRow.rows(for:)`.
 
 ## CLI surface (v1)
 

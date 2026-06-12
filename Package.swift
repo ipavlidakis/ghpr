@@ -15,8 +15,10 @@ let package = Package(
             name: "ghpr",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                "AuthenticationModule"
-            ]
+                "AuthenticationModule",
+                "DiffUIModule"
+            ],
+            resources: [.copy("Resources/demo.diff")]
         ),
         .target(name: "AuthenticationModule"),
         .target(name: "GithubModule"),
