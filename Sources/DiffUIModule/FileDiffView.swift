@@ -43,11 +43,16 @@ package struct FileDiffView<Annotation: View>: View {
                 .foregroundStyle(.secondary)
                 .padding(8)
         } else {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(rows) { row in
-                    DiffRowView(row: row, gutterWidth: gutterWidth, annotation: annotation)
-                }
+            // List (NSTableView-backed) recycles rows; LazyVStack does not and
+            // drops frames on files with thousands of rows.
+            List(rows) { row in
+                DiffRowView(row: row, gutterWidth: gutterWidth, annotation: annotation)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .environment(\.defaultMinListRowHeight, 1)
         }
     }
 }

@@ -27,11 +27,9 @@ struct DemoScreen: View {
             .navigationSplitViewColumnWidth(min: 240, ideal: 320)
         } detail: {
             if let selectedFile {
-                ScrollView {
-                    FileDiffView(fileDiff: selectedFile)
-                        .padding(12)
-                }
-                .id(selectedFile.path)
+                FileDiffView(fileDiff: selectedFile)
+                    .padding(12)
+                    .id(selectedFile.path)
             } else {
                 ContentUnavailableView("No changed files", systemImage: "doc.text")
             }
