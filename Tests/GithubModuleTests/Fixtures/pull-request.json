@@ -1,47 +1,67 @@
 {
-  "url": "https://api.github.com/repos/apple/swift-argument-parser/pulls/700",
-  "id": 2320598202,
-  "node_id": "PR_kwDODmuHYc6KUYS6",
-  "html_url": "https://github.com/apple/swift-argument-parser/pull/700",
-  "diff_url": "https://github.com/apple/swift-argument-parser/pull/700.diff",
-  "patch_url": "https://github.com/apple/swift-argument-parser/pull/700.patch",
-  "issue_url": "https://api.github.com/repos/apple/swift-argument-parser/issues/700",
-  "number": 700,
+  "url": "https://api.github.com/repos/apple/swift-argument-parser/pulls/908",
+  "id": 3749472674,
+  "node_id": "PR_kwDODmuHYc7ffGmi",
+  "html_url": "https://github.com/apple/swift-argument-parser/pull/908",
+  "diff_url": "https://github.com/apple/swift-argument-parser/pull/908.diff",
+  "patch_url": "https://github.com/apple/swift-argument-parser/pull/908.patch",
+  "issue_url": "https://api.github.com/repos/apple/swift-argument-parser/issues/908",
+  "number": 908,
   "state": "closed",
   "locked": false,
-  "title": "Move additional tests to snapshots",
+  "title": "Revert source break in 1.8.0 `parse` methods",
   "user": {
-    "login": "rauhul",
-    "id": 9739930,
-    "node_id": "MDQ6VXNlcjk3Mzk5MzA=",
-    "avatar_url": "https://avatars.githubusercontent.com/u/9739930?v=4",
+    "login": "natecook1000",
+    "id": 7053374,
+    "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+    "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
     "gravatar_id": "",
-    "url": "https://api.github.com/users/rauhul",
-    "html_url": "https://github.com/rauhul",
-    "followers_url": "https://api.github.com/users/rauhul/followers",
-    "following_url": "https://api.github.com/users/rauhul/following{/other_user}",
-    "gists_url": "https://api.github.com/users/rauhul/gists{/gist_id}",
-    "starred_url": "https://api.github.com/users/rauhul/starred{/owner}{/repo}",
-    "subscriptions_url": "https://api.github.com/users/rauhul/subscriptions",
-    "organizations_url": "https://api.github.com/users/rauhul/orgs",
-    "repos_url": "https://api.github.com/users/rauhul/repos",
-    "events_url": "https://api.github.com/users/rauhul/events{/privacy}",
-    "received_events_url": "https://api.github.com/users/rauhul/received_events",
+    "url": "https://api.github.com/users/natecook1000",
+    "html_url": "https://github.com/natecook1000",
+    "followers_url": "https://api.github.com/users/natecook1000/followers",
+    "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+    "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+    "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+    "repos_url": "https://api.github.com/users/natecook1000/repos",
+    "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/natecook1000/received_events",
     "type": "User",
     "user_view_type": "public",
     "site_admin": false
   },
-  "body": "Moves some examples test to use snapshot files instead of inline multiline strings.\r\n\r\n",
-  "created_at": "2025-02-06T18:24:27Z",
-  "updated_at": "2025-02-06T18:28:24Z",
-  "closed_at": "2025-02-06T18:28:22Z",
-  "merged_at": "2025-02-06T18:28:22Z",
-  "merge_commit_sha": "d3630e31900d6ebe8c2cfd36815a2024dcc1fd39",
+  "body": "This removes the `async` overloads to `parse` and `parseAsRoot` that caused a source break in 1.8.0, and introduces new names that disambiguate the methods with `async` behavior. Instead of calling the existing methods with the `await` keyword, users can call `await asyncParse` or `await asyncParseAsRoot`.\r\n\r\nThis change also adds a validation step to the synchronous parsing path to check if an async completions function is called.\r\n\r\nUsers that have already updated their code to work around the source break will revert to the old methods with this change, which will yield a \"No 'async' operations occur within 'await' expression\" warning. They can remove the `await` keyword or update to call the async versions directly to fix the warning.\r\n\r\nResolves #907",
+  "created_at": "2026-05-26T16:17:24Z",
+  "updated_at": "2026-05-27T01:17:38Z",
+  "closed_at": "2026-05-27T01:17:36Z",
+  "merged_at": "2026-05-27T01:17:36Z",
+  "merge_commit_sha": "043bca1136bc24f9b4fdcba3d0157d4bf2654041",
   "assignees": [
 
   ],
   "requested_reviewers": [
-
+    {
+      "login": "rauhul",
+      "id": 9739930,
+      "node_id": "MDQ6VXNlcjk3Mzk5MzA=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9739930?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/rauhul",
+      "html_url": "https://github.com/rauhul",
+      "followers_url": "https://api.github.com/users/rauhul/followers",
+      "following_url": "https://api.github.com/users/rauhul/following{/other_user}",
+      "gists_url": "https://api.github.com/users/rauhul/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/rauhul/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/rauhul/subscriptions",
+      "organizations_url": "https://api.github.com/users/rauhul/orgs",
+      "repos_url": "https://api.github.com/users/rauhul/repos",
+      "events_url": "https://api.github.com/users/rauhul/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/rauhul/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    }
   ],
   "requested_teams": [
 
@@ -51,15 +71,15 @@
   ],
   "milestone": null,
   "draft": false,
-  "commits_url": "https://api.github.com/repos/apple/swift-argument-parser/pulls/700/commits",
-  "review_comments_url": "https://api.github.com/repos/apple/swift-argument-parser/pulls/700/comments",
+  "commits_url": "https://api.github.com/repos/apple/swift-argument-parser/pulls/908/commits",
+  "review_comments_url": "https://api.github.com/repos/apple/swift-argument-parser/pulls/908/comments",
   "review_comment_url": "https://api.github.com/repos/apple/swift-argument-parser/pulls/comments{/number}",
-  "comments_url": "https://api.github.com/repos/apple/swift-argument-parser/issues/700/comments",
-  "statuses_url": "https://api.github.com/repos/apple/swift-argument-parser/statuses/8b8bc61b335f4a7d9e6ff1f96693003e6598280b",
+  "comments_url": "https://api.github.com/repos/apple/swift-argument-parser/issues/908/comments",
+  "statuses_url": "https://api.github.com/repos/apple/swift-argument-parser/statuses/4157f4816b1736210581a02886d9f85d5fe6c589",
   "head": {
-    "label": "apple:more-snapshots",
-    "ref": "more-snapshots",
-    "sha": "8b8bc61b335f4a7d9e6ff1f96693003e6598280b",
+    "label": "apple:fix-asyncparse-break",
+    "ref": "fix-asyncparse-break",
+    "sha": "4157f4816b1736210581a02886d9f85d5fe6c589",
     "user": {
       "login": "apple",
       "id": 10639145,
@@ -199,7 +219,7 @@
   "base": {
     "label": "apple:main",
     "ref": "main",
-    "sha": "45b5c745c7936728a9f0d62d8f4ca32d011e7600",
+    "sha": "5e0406d68a4937f21ae5f670b8f89dad1d156a1c",
     "user": {
       "login": "apple",
       "id": 10639145,
@@ -338,31 +358,31 @@
   },
   "_links": {
     "self": {
-      "href": "https://api.github.com/repos/apple/swift-argument-parser/pulls/700"
+      "href": "https://api.github.com/repos/apple/swift-argument-parser/pulls/908"
     },
     "html": {
-      "href": "https://github.com/apple/swift-argument-parser/pull/700"
+      "href": "https://github.com/apple/swift-argument-parser/pull/908"
     },
     "issue": {
-      "href": "https://api.github.com/repos/apple/swift-argument-parser/issues/700"
+      "href": "https://api.github.com/repos/apple/swift-argument-parser/issues/908"
     },
     "comments": {
-      "href": "https://api.github.com/repos/apple/swift-argument-parser/issues/700/comments"
+      "href": "https://api.github.com/repos/apple/swift-argument-parser/issues/908/comments"
     },
     "review_comments": {
-      "href": "https://api.github.com/repos/apple/swift-argument-parser/pulls/700/comments"
+      "href": "https://api.github.com/repos/apple/swift-argument-parser/pulls/908/comments"
     },
     "review_comment": {
       "href": "https://api.github.com/repos/apple/swift-argument-parser/pulls/comments{/number}"
     },
     "commits": {
-      "href": "https://api.github.com/repos/apple/swift-argument-parser/pulls/700/commits"
+      "href": "https://api.github.com/repos/apple/swift-argument-parser/pulls/908/commits"
     },
     "statuses": {
-      "href": "https://api.github.com/repos/apple/swift-argument-parser/statuses/8b8bc61b335f4a7d9e6ff1f96693003e6598280b"
+      "href": "https://api.github.com/repos/apple/swift-argument-parser/statuses/4157f4816b1736210581a02886d9f85d5fe6c589"
     }
   },
-  "author_association": "COLLABORATOR",
+  "author_association": "MEMBER",
   "auto_merge": null,
   "assignee": null,
   "active_lock_reason": null,
@@ -371,31 +391,31 @@
   "rebaseable": null,
   "mergeable_state": "unknown",
   "merged_by": {
-    "login": "rauhul",
-    "id": 9739930,
-    "node_id": "MDQ6VXNlcjk3Mzk5MzA=",
-    "avatar_url": "https://avatars.githubusercontent.com/u/9739930?v=4",
+    "login": "natecook1000",
+    "id": 7053374,
+    "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+    "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
     "gravatar_id": "",
-    "url": "https://api.github.com/users/rauhul",
-    "html_url": "https://github.com/rauhul",
-    "followers_url": "https://api.github.com/users/rauhul/followers",
-    "following_url": "https://api.github.com/users/rauhul/following{/other_user}",
-    "gists_url": "https://api.github.com/users/rauhul/gists{/gist_id}",
-    "starred_url": "https://api.github.com/users/rauhul/starred{/owner}{/repo}",
-    "subscriptions_url": "https://api.github.com/users/rauhul/subscriptions",
-    "organizations_url": "https://api.github.com/users/rauhul/orgs",
-    "repos_url": "https://api.github.com/users/rauhul/repos",
-    "events_url": "https://api.github.com/users/rauhul/events{/privacy}",
-    "received_events_url": "https://api.github.com/users/rauhul/received_events",
+    "url": "https://api.github.com/users/natecook1000",
+    "html_url": "https://github.com/natecook1000",
+    "followers_url": "https://api.github.com/users/natecook1000/followers",
+    "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+    "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+    "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+    "repos_url": "https://api.github.com/users/natecook1000/repos",
+    "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/natecook1000/received_events",
     "type": "User",
     "user_view_type": "public",
     "site_admin": false
   },
-  "comments": 1,
-  "review_comments": 0,
+  "comments": 0,
+  "review_comments": 7,
   "maintainer_can_modify": false,
-  "commits": 1,
-  "additions": 427,
-  "deletions": 435,
+  "commits": 5,
+  "additions": 34,
+  "deletions": 12,
   "changed_files": 5
 }

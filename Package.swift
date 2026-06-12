@@ -19,9 +19,15 @@ let package = Package(
             ]
         ),
         .target(name: "AuthenticationModule"),
+        .target(name: "GithubModule"),
         .testTarget(
             name: "AuthenticationModuleTests",
             dependencies: ["AuthenticationModule"]
+        ),
+        .testTarget(
+            name: "GithubModuleTests",
+            dependencies: ["GithubModule"],
+            resources: [.copy("Fixtures")]
         )
     ]
 )
