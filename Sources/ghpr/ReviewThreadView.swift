@@ -8,11 +8,14 @@ import SwiftUI
 struct ReviewThreadView: View {
     let thread: GithubReviewThread
     let pullRequestAuthor: String?
+    /// Collapse state lives in the parent: the diff table re-measures row
+    /// heights only when the annotation content is rebuilt.
+    let isCollapsed: Bool
+    let onToggleCollapse: () -> Void
     var onReply: ((String) -> Void)?
     var onResolve: (() -> Void)?
     var onReact: ((GithubReviewComment, GithubReactionContent) -> Void)?
 
-    @State private var isCollapsed = false
     @State private var replyText = ""
 
     var body: some View {
@@ -35,7 +38,7 @@ struct ReviewThreadView: View {
 
     private var header: some View {
         Button {
-            isCollapsed.toggle()
+            onToggleCollapse()
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")

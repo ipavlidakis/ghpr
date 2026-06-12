@@ -9,6 +9,8 @@ struct ReviewCommentView: View {
     let isPullRequestAuthor: Bool
     let onReact: (GithubReactionContent) -> Void
 
+    @State private var isReactionPickerShown = false
+
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             avatar
@@ -74,20 +76,28 @@ struct ReviewCommentView: View {
                     .padding(.vertical, 2)
                     .background(.quaternary.opacity(0.6), in: .capsule)
             }
-            Menu {
-                ForEach(GithubReactionContent.allCases, id: \.self) { reaction in
-                    Button("\(reaction.emoji)") {
-                        onReact(reaction)
-                    }
-                }
+            // A Menu misfires inside hosted table cells; a popover is reliable.
+            Button {
+                isReactionPickerShown = true
             } label: {
                 Image(systemName: "face.smiling")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
+            .buttonStyle(.plain)
+            .popover(isPresented: $isReactionPickerShown, arrowEdge: .bottom) {
+                HStack(spacing: 4) {
+                    ForEach(GithubReactionContent.allCases, id: \.self) { reaction in
+                        Button(reaction.emoji) {
+                            isReactionPickerShown = false
+                            onReact(reaction)
+                        }
+                        .buttonStyle(.plain)
+                        .font(.title3)
+                    }
+                }
+                .padding(8)
+            }
         }
     }
 }

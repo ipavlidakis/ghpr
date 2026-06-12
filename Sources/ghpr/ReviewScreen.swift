@@ -14,6 +14,7 @@ struct ReviewScreen: View {
     @State private var selectedPath: String?
     @State private var composerAnchor: DiffLineAnchor?
     @State private var isSubmitPopoverShown = false
+    @State private var collapsedThreads: Set<String> = []
 
     init(model: ReviewModel) {
         self.model = model
@@ -137,6 +138,12 @@ struct ReviewScreen: View {
                 ReviewThreadView(
                     thread: thread,
                     pullRequestAuthor: model.data.pullRequest.user?.login,
+                    isCollapsed: collapsedThreads.contains(thread.id),
+                    onToggleCollapse: {
+                        if !collapsedThreads.insert(thread.id).inserted {
+                            collapsedThreads.remove(thread.id)
+                        }
+                    },
                     onReply: { body in Task { await model.reply(to: thread, body: body) } },
                     onResolve: { Task { await model.resolve(thread: thread) } },
                     onReact: { comment, reaction in Task { await model.react(to: comment, with: reaction) } }
@@ -177,6 +184,9 @@ struct ReviewScreen: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
+                // Fill the hosted cell's width so cards pin to the leading
+                // edge instead of centering.
+                .frame(maxWidth: .infinity, alignment: .leading)
             )
         }
     }
