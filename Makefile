@@ -1,6 +1,7 @@
-PREFIX ?= /usr/local
+VERSION ?= $(shell .build/release/ghpr --version 2>/dev/null || echo dev)
+DIST = dist/ghpr-v$(VERSION)-arm64-macos.tar.gz
 
-.PHONY: build install uninstall test
+.PHONY: build test dist clean
 
 build:
 	swift build -c release
@@ -8,10 +9,14 @@ build:
 test:
 	swift test
 
-install: build
-	install -d $(PREFIX)/bin
-	install .build/release/ghpr $(PREFIX)/bin/ghpr
-	@echo "Installed $(PREFIX)/bin/ghpr"
+# The binary is not standalone: the tree-sitter grammar bundles (queries)
+# and the demo fixture bundle must live next to the executable.
+dist: build
+	rm -rf dist/stage && mkdir -p dist/stage
+	cp .build/release/ghpr dist/stage/
+	cp -R .build/release/*.bundle dist/stage/
+	tar -czf $(DIST) -C dist/stage .
+	@shasum -a 256 $(DIST)
 
-uninstall:
-	rm -f $(PREFIX)/bin/ghpr
+clean:
+	rm -rf dist .build
