@@ -25,16 +25,7 @@ struct DashCommand: ParsableCommand {
             let repository = try await LocalRepository().repository()
 
             print("Loading open pull requests for \(repository.fullName)…")
-            async let user = client.authenticatedUser()
-            async let pullRequests = client.openPullRequests(in: repository)
-
-            let model = await DashModel(
-                repository: repository,
-                pullRequests: try await pullRequests,
-                me: try await user.login,
-                client: client
-            )
-            return (model, repository)
+            return (try await DashModel.load(with: client, repository: repository), repository)
         }
 
         MainActor.assumeIsolated {

@@ -65,7 +65,7 @@ enum AppBootstrap {
         let frame = centeredFrame(size: size).offsetBy(dx: cascadeOffset, dy: -cascadeOffset)
         cascadeOffset = (cascadeOffset + 26).truncatingRemainder(dividingBy: 130)
         window.setFrame(frame, display: true)
-        frameGuard.protect(window, frame: frame, for: .seconds(3))
+        frameGuard.protect(window, frame: frame)
     }
 
     private static func centeredFrame(size: NSSize) -> NSRect {

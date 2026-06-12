@@ -1,27 +1,21 @@
 import AppKit
 import Foundation
 
-/// Counters SwiftUI's early layout passes collapsing the unbundled window
-/// to its minimum content size (observed with `NavigationSplitView` and
-/// toolbar bridging). Watches resizes briefly after launch and restores the
-/// intended frame, then stands down so the user can resize freely.
+/// Counters SwiftUI's hosting layer sporadically collapsing unbundled
+/// windows to their minimum content size. The collapse is a startup race
+/// that does not reliably post `didResizeNotification`, so the guard polls:
+/// a half-second check per window costs nothing and cannot be evaded.
+/// User drags (`inLiveResize`) are untouched, and `minSize` bounds those.
 @MainActor
 final class WindowFrameGuard {
-    func protect(_ window: NSWindow, frame: NSRect, for duration: Duration) {
-        let observer = NotificationCenter.default.addObserver(
-            forName: NSWindow.didResizeNotification,
-            object: window,
-            queue: .main
-        ) { [weak window] _ in
-            MainActor.assumeIsolated {
-                guard let window, window.frame.width < 600 else { return }
-                window.setFrame(frame, display: true)
+    func protect(_ window: NSWindow, frame: NSRect) {
+        Task { @MainActor [weak window] in
+            while let window {
+                if !window.inLiveResize, window.frame.width < 600 {
+                    window.setFrame(frame, display: true)
+                }
+                try? await Task.sleep(for: .milliseconds(500))
             }
-        }
-
-        Task { @MainActor in
-            try? await Task.sleep(for: duration)
-            NotificationCenter.default.removeObserver(observer)
         }
     }
 }

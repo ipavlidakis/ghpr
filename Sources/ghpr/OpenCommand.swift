@@ -1,10 +1,12 @@
+import AppKit
 import ArgumentParser
 import AuthenticationModule
 import Foundation
 import GithubModule
 
 /// The default command: opens a review window for a PR URL, or for the open
-/// PR of the current directory's branch when no URL is given.
+/// PR of the current directory's branch — falling back to the dashboard
+/// when the branch has no open PR.
 struct OpenCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "open",
@@ -14,10 +16,16 @@ struct OpenCommand: ParsableCommand {
     @Argument(help: "A pull request URL (https://github.com/owner/repo/pull/123). Omit to use the current directory's branch.")
     var pullRequestURL: String?
 
+    /// Where the command ends up once the network work is done.
+    private enum Destination: Sendable {
+        case review(ReviewData, GithubClient)
+        case dash(DashModel)
+    }
+
     func run() throws {
         let urlArgument = pullRequestURL
 
-        let (data, client) = try AsyncBridge.run {
+        let destination = try AsyncBridge.run { () -> Destination in
             guard let token = await TokenResolver().resolve() else {
                 throw ValidationError("""
                 No GitHub token found. To authenticate, either:
@@ -27,44 +35,46 @@ struct OpenCommand: ParsableCommand {
                 """)
             }
             let client = GithubClient(token: token.value)
-            let reference = try await Self.resolveReference(urlArgument: urlArgument, client: client)
-            print("Loading \(reference.repository.fullName) #\(reference.number)…")
-            return (try await ReviewData.load(with: client, reference: reference), client)
+
+            if let urlArgument {
+                guard let reference = GithubPullRequestReference(url: urlArgument) else {
+                    throw ValidationError("""
+                    Not a pull request URL: \(urlArgument)
+                    Expected the form https://github.com/{owner}/{repo}/pull/{number}
+                    """)
+                }
+                print("Loading \(reference.repository.fullName) #\(reference.number)…")
+                return .review(try await ReviewData.load(with: client, reference: reference), client)
+            }
+
+            let localRepository = LocalRepository()
+            let repository = try await localRepository.repository()
+            let branch = try await localRepository.currentBranch()
+
+            if let pullRequest = try await client.openPullRequest(in: repository, branch: branch) {
+                let reference = GithubPullRequestReference(repository: repository, number: pullRequest.number)
+                print("Loading \(reference.repository.fullName) #\(reference.number)…")
+                return .review(try await ReviewData.load(with: client, reference: reference), client)
+            }
+
+            print("No open pull request for branch '\(branch)' — opening the dashboard…")
+            return .dash(try await DashModel.load(with: client, repository: repository))
         }
 
         MainActor.assumeIsolated {
-            AppBootstrap.run(
-                title: "\(data.reference.repository.fullName) #\(data.reference.number) — \(data.pullRequest.title)",
-                content: ReviewScreen(model: ReviewModel(data: data, client: client))
-            )
-        }
-    }
-
-    /// URL argument if present, otherwise current-directory mode:
-    /// origin remote → current branch → open PR for `owner:branch`.
-    private static func resolveReference(
-        urlArgument: String?,
-        client: GithubClient
-    ) async throws -> GithubPullRequestReference {
-        if let urlArgument {
-            guard let reference = GithubPullRequestReference(url: urlArgument) else {
-                throw ValidationError("""
-                Not a pull request URL: \(urlArgument)
-                Expected the form https://github.com/{owner}/{repo}/pull/{number}
-                """)
+            switch destination {
+            case .review(let data, let client):
+                AppBootstrap.run(
+                    title: "\(data.reference.repository.fullName) #\(data.reference.number) — \(data.pullRequest.title)",
+                    content: ReviewScreen(model: ReviewModel(data: data, client: client))
+                )
+            case .dash(let model):
+                AppBootstrap.run(
+                    title: "\(model.repository.fullName) — open pull requests",
+                    size: NSSize(width: 780, height: 560),
+                    content: DashScreen(model: model)
+                )
             }
-            return reference
         }
-
-        let localRepository = LocalRepository()
-        let repository = try await localRepository.repository()
-        let branch = try await localRepository.currentBranch()
-        guard let pullRequest = try await client.openPullRequest(in: repository, branch: branch) else {
-            throw ValidationError("""
-            No open pull request found for \(repository.fullName) branch '\(branch)'.
-            Try `ghpr dash` to browse all open pull requests.
-            """)
-        }
-        return GithubPullRequestReference(repository: repository, number: pullRequest.number)
     }
 }

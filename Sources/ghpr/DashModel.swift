@@ -23,6 +23,18 @@ final class DashModel {
         self.client = client
     }
 
+    /// Fetches the authenticated user and the repo's open PRs in parallel.
+    static func load(with client: GithubClient, repository: GithubRepository) async throws -> DashModel {
+        async let user = client.authenticatedUser()
+        async let pullRequests = client.openPullRequests(in: repository)
+        return DashModel(
+            repository: repository,
+            pullRequests: try await pullRequests,
+            me: try await user.login,
+            client: client
+        )
+    }
+
     var filtered: [GithubPullRequest] {
         switch filter {
         case .all:
