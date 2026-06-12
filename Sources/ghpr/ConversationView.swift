@@ -46,6 +46,30 @@ struct ConversationView: View {
             ForEach(Array(data.timeline.enumerated()), id: \.offset) { _, item in
                 itemView(item)
             }
+            if !model.pendingComments.isEmpty {
+                pendingReview
+            }
+        }
+    }
+
+    /// Drafts batched in the files tab, visible here before submission.
+    private var pendingReview: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "clock")
+                    .foregroundStyle(.orange)
+                Text("Pending review")
+                    .font(.callout.weight(.semibold))
+                Text("\(model.pendingComments.count) comment\(model.pendingComments.count == 1 ? "" : "s") · submit from the Files changed tab")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(model.pendingComments) { comment in
+                ConversationPendingView(comment: comment) {
+                    model.removePendingComment(id: comment.id)
+                }
+                .padding(.leading, 26)
+            }
         }
     }
 
