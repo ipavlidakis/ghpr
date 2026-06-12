@@ -22,8 +22,9 @@ final class DiffFileHeaderCellView: NSView {
 
     override init(frame: NSRect) {
         super.init(frame: frame)
+        // Single line via maximumNumberOfLines, not usesSingleLineMode —
+        // the latter silently replaces middle truncation with tail clipping.
         textField.lineBreakMode = .byTruncatingMiddle
-        textField.usesSingleLineMode = true
         textField.maximumNumberOfLines = 1
         // Truncate the path rather than pushing the trailing controls out.
         textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
