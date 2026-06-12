@@ -9,6 +9,7 @@ import SwiftUI
 @MainActor
 enum AppBootstrap {
     private static let delegate = AppDelegate()
+    private static let frameGuard = WindowFrameGuard()
 
     static func run(title: String, content: some View) {
         let app = NSApplication.shared
@@ -26,10 +27,27 @@ enum AppBootstrap {
         window.isReleasedWhenClosed = false
 
         let hostingView = NSHostingView(rootView: content)
-        // The window owns its size; otherwise SwiftUI's ideal size can
-        // collapse the frame on launch.
         hostingView.sizingOptions = []
-        window.contentView = hostingView
+
+        // Sandbox the hosting view inside a plain container pinned at
+        // sub-required priority: SwiftUI's internal sizing constraints then
+        // break against the container instead of resizing the window
+        // (otherwise NavigationSplitView collapses the frame to ~120pt).
+        let container = NSView()
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(hostingView)
+        let edges = [
+            hostingView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            hostingView.topAnchor.constraint(equalTo: container.topAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ]
+        for constraint in edges {
+            constraint.priority = NSLayoutConstraint.Priority(999)
+        }
+        NSLayoutConstraint.activate(edges)
+
+        window.contentView = container
         window.setContentSize(NSSize(width: 1280, height: 840))
         window.minSize = NSSize(width: 800, height: 500)
         window.center()
@@ -37,11 +55,9 @@ enum AppBootstrap {
 
         app.activate(ignoringOtherApps: true)
 
-        // SwiftUI's initial layout pass can shrink the window to the content's
-        // minimum; re-assert the intended frame on the first run-loop turn.
-        Task { @MainActor in
-            window.setFrame(Self.centeredFrame(size: NSSize(width: 1280, height: 840)), display: true)
-        }
+        let frame = centeredFrame(size: NSSize(width: 1280, height: 840))
+        window.setFrame(frame, display: true)
+        frameGuard.protect(window, frame: frame, for: .seconds(3))
 
         app.run()
     }
