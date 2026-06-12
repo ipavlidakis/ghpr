@@ -12,7 +12,7 @@ struct GithubPRCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ghpr",
         abstract: "Review GitHub pull requests in a native macOS window, straight from your terminal.",
-        version: "0.2.0",
+        version: "0.2.1",
         subcommands: [OpenCommand.self, DashCommand.self, AuthCommand.self, DemoCommand.self],
         defaultSubcommand: OpenCommand.self
     )
