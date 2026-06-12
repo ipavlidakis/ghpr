@@ -10,6 +10,9 @@ struct FileTreeNodeView: View {
 
     var body: some View {
         if let children = node.children {
+            // No .selectionDisabled() here: it would cascade to every row
+            // inside the group, making files in folders unselectable. The
+            // selection binding ignores directory ids instead.
             DisclosureGroup(isExpanded: $isExpanded) {
                 ForEach(children) { child in
                     FileTreeNodeView(node: child)
@@ -24,7 +27,6 @@ struct FileTreeNodeView: View {
                         .truncationMode(.middle)
                 }
             }
-            .selectionDisabled()
         } else if let item = node.item {
             FileListRowView(item: item, displayName: node.name)
                 .tag(item.path)

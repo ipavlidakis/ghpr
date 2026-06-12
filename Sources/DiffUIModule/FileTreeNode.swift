@@ -4,8 +4,8 @@ import Foundation
 /// file (with its list item). Directory chains with no files and a single
 /// subdirectory render inline as one node ("Sources/App/Models"), like
 /// GitHub's file tree.
-struct FileTreeNode: Identifiable {
-    let id: String
+package struct FileTreeNode: Identifiable {
+    package let id: String
     /// Display name: the path component, or the compressed chain for
     /// single-child directories.
     let name: String
@@ -13,6 +13,25 @@ struct FileTreeNode: Identifiable {
     let item: FileListItem?
     /// Present on directory nodes only.
     let children: [FileTreeNode]?
+
+    /// File paths in tree traversal order (directories first, then files,
+    /// alphabetically) — the order the diff should render in so the sidebar
+    /// and the scroll stream agree.
+    package static func orderedPaths(from items: [FileListItem]) -> [String] {
+        var paths: [String] = []
+        func walk(_ nodes: [FileTreeNode]) {
+            for node in nodes {
+                if let item = node.item {
+                    paths.append(item.path)
+                }
+                if let children = node.children {
+                    walk(children)
+                }
+            }
+        }
+        walk(tree(from: items))
+        return paths
+    }
 
     static func tree(from items: [FileListItem]) -> [FileTreeNode] {
         final class Directory {

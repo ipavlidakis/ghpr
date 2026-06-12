@@ -74,9 +74,14 @@ struct ReviewScreen: View {
         }
     }
 
-    /// Files with any full-context expansions swapped in.
+    /// Files in tree traversal order (matching the sidebar), with any
+    /// full-context expansions swapped in.
     private var displayFiles: [FileDiff] {
-        model.data.files.map { expandedFiles[$0.path] ?? $0 }
+        let order = FileTreeNode.orderedPaths(from: model.data.files.map(FileListItem.init))
+        let rank = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($0.element, $0.offset) })
+        return model.data.files
+            .sorted { (rank[$0.path] ?? .max) < (rank[$1.path] ?? .max) }
+            .map { expandedFiles[$0.path] ?? $0 }
     }
 
     private var filesSplitView: some View {

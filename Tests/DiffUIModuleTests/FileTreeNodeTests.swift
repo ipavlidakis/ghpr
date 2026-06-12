@@ -52,6 +52,23 @@ struct FileTreeNodeTests {
         #expect(children.first?.children?.first?.name == "User.swift")
     }
 
+    @Test("orderedPaths walks directories first, files after, alphabetically")
+    func orderedPaths() {
+        let order = FileTreeNode.orderedPaths(from: [
+            item("README.md"),
+            item("Sources/App/Main.swift"),
+            item("Sources/App/Helper.swift"),
+            item("Sources/Zeta.swift"),
+        ])
+
+        #expect(order == [
+            "Sources/App/Helper.swift",
+            "Sources/App/Main.swift",
+            "Sources/Zeta.swift",
+            "README.md",
+        ])
+    }
+
     @Test("node ids are full paths, unique across the tree")
     func ids() {
         let tree = FileTreeNode.tree(from: [
