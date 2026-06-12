@@ -94,6 +94,16 @@ final class ReviewModel {
         }
     }
 
+    func react(toIssueComment comment: GithubIssueComment, with reaction: GithubReactionContent) async {
+        await perform {
+            try await self.client.addIssueCommentReaction(
+                in: self.data.reference.repository,
+                commentId: comment.databaseId,
+                reaction: reaction
+            )
+        }
+    }
+
     // MARK: File expansion
 
     /// The file's diff rebuilt with full context from the head revision.

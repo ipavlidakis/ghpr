@@ -80,6 +80,18 @@ struct GithubClientWritePathTests {
         #expect(try body(of: request)["body"] as? String == "agreed")
     }
 
+    @Test("addIssueCommentReaction posts to the issue comment reactions endpoint")
+    func issueCommentReaction() async throws {
+        let transport = StubTransport(data: Data("{}".utf8), statusCode: 201)
+
+        try await client(transport).addIssueCommentReaction(in: repository, commentId: 3001, reaction: .hooray)
+
+        let request = try #require(await transport.requests.first)
+        #expect(request.httpMethod == "POST")
+        #expect(request.url?.absoluteString == "https://api.github.com/repos/ipavlidakis/ghpr/issues/comments/3001/reactions")
+        #expect(try body(of: request)["content"] as? String == "hooray")
+    }
+
     @Test("resolveThread posts the GraphQL mutation")
     func resolve() async throws {
         let transport = StubTransport(data: Data(#"{"data":{}}"#.utf8))

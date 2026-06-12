@@ -64,7 +64,9 @@ struct ReviewScreen: View {
     private var content: some View {
         switch tab {
         case .conversation:
-            ReviewOverviewView(data: model.data)
+            ConversationView(data: model.data) { comment, reaction in
+                Task { await model.react(toIssueComment: comment, with: reaction) }
+            }
         case .commits:
             CommitsListView(commits: model.data.commits)
         case .checks:
@@ -160,7 +162,7 @@ struct ReviewScreen: View {
 
     private var tabBar: some View {
         HStack(spacing: 4) {
-            tabButton(.conversation, count: model.data.threads.count)
+            tabButton(.conversation, count: conversationCount)
             tabButton(.commits, count: model.data.commits.count)
             tabButton(.checks, count: model.data.checkRuns.count)
             tabButton(.files, count: model.data.files.count)
@@ -169,6 +171,11 @@ struct ReviewScreen: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(.bar)
+    }
+
+    /// Comment cards in the timeline, like GitHub's conversation counter.
+    private var conversationCount: Int {
+        model.data.timeline.count { if case .comment = $0 { true } else { false } }
     }
 
     private func tabButton(_ target: ReviewTab, count: Int) -> some View {

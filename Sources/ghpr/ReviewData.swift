@@ -10,12 +10,14 @@ struct ReviewData: Sendable {
     let checkRuns: [GithubCheckRun]
     let threads: [GithubReviewThread]
     let commits: [GithubCommit]
+    let timeline: [GithubTimelineItem]
 
     static func load(with client: GithubClient, reference: GithubPullRequestReference) async throws -> ReviewData {
         async let pullRequest = client.pullRequest(in: reference.repository, number: reference.number)
         async let diff = client.diff(in: reference.repository, number: reference.number)
         async let threads = client.reviewThreads(in: reference.repository, number: reference.number)
         async let commits = client.commits(in: reference.repository, number: reference.number)
+        async let timeline = client.timeline(in: reference.repository, number: reference.number)
 
         let resolved = try await pullRequest
         let checkRuns = try await client.checkRuns(in: reference.repository, ref: resolved.head.sha)
@@ -26,7 +28,8 @@ struct ReviewData: Sendable {
             files: UnifiedDiffParser().parse(try await diff),
             checkRuns: checkRuns,
             threads: try await threads,
-            commits: try await commits
+            commits: try await commits,
+            timeline: try await timeline
         )
     }
 }

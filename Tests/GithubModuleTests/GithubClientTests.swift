@@ -142,6 +142,93 @@ struct GithubClientTests {
         #expect(url.contains("commits/4157f4816b1736210581a02886d9f85d5fe6c589/check-runs"))
     }
 
+    @Test("timeline decodes supported entries and drops unsupported events")
+    func timeline() async throws {
+        let transport = StubTransport(data: try Fixture.data("timeline.json"))
+
+        let timeline = try await client(transport).timeline(in: repository, number: 908)
+
+        // The "subscribed" entry is unsupported and filtered out.
+        #expect(timeline.count == 8)
+
+        guard case .commit(let commit) = timeline[0] else {
+            Issue.record("expected a commit first, got \(timeline[0])")
+            return
+        }
+        #expect(commit.sha.hasPrefix("45135a5"))
+        #expect(commit.message.hasPrefix("[Enhancement]Integrate"))
+        #expect(commit.authorName == "Ilias Pavlidakis")
+
+        guard case .event(let assigned) = timeline[1] else {
+            Issue.record("expected an assignment event, got \(timeline[1])")
+            return
+        }
+        #expect(assigned.kind == .assigned)
+        #expect(assigned.actorLogin == "ipavlidakis")
+        #expect(assigned.assigneeLogin == "ipavlidakis")
+
+        guard case .event(let requested) = timeline[2] else {
+            Issue.record("expected a review request event, got \(timeline[2])")
+            return
+        }
+        #expect(requested.kind == .reviewRequested)
+        #expect(requested.requestedReviewerName == "ios-developers")
+
+        guard case .event(let labeled) = timeline[3] else {
+            Issue.record("expected a label event, got \(timeline[3])")
+            return
+        }
+        #expect(labeled.kind == .labeled)
+        #expect(labeled.label == GithubLabel(name: "enhancement", color: "a2eeef"))
+
+        guard case .event(let milestoned) = timeline[4] else {
+            Issue.record("expected a milestone event, got \(timeline[4])")
+            return
+        }
+        #expect(milestoned.kind == .milestoned)
+        #expect(milestoned.milestoneTitle == "1.40.0")
+
+        guard case .comment(let comment) = timeline[5] else {
+            Issue.record("expected a comment, got \(timeline[5])")
+            return
+        }
+        #expect(comment.databaseId == 3001)
+        #expect(comment.authorLogin == "coderabbitai[bot]")
+        #expect(comment.isEdited == true)
+        #expect(comment.reactions == [
+            GithubReaction(content: .thumbsUp, count: 2),
+            GithubReaction(content: .hooray, count: 1),
+        ])
+
+        guard case .review(let review) = timeline[6] else {
+            Issue.record("expected a review, got \(timeline[6])")
+            return
+        }
+        #expect(review.state == "approved")
+        #expect(review.authorLogin == "martinmitrevski")
+        #expect(review.body == "LGTM!")
+
+        guard case .event(let renamed) = timeline[7] else {
+            Issue.record("expected a rename event, got \(timeline[7])")
+            return
+        }
+        #expect(renamed.kind == .renamed)
+        #expect(renamed.renamedFrom == "WIP title")
+        #expect(renamed.renamedTo == "Final title")
+
+        let url = try #require(await transport.requests.first?.url?.absoluteString)
+        #expect(url.contains("issues/908/timeline"))
+    }
+
+    @Test("pull request assignees decode when present")
+    func assignees() async throws {
+        let transport = StubTransport(data: try Fixture.data("pull-request.json"))
+
+        let pullRequest = try await client(transport).pullRequest(in: repository, number: 908)
+
+        #expect(pullRequest.assignees != nil)
+    }
+
     @Test("reviewThreads posts the GraphQL query and maps the response")
     func reviewThreads() async throws {
         let transport = StubTransport(data: try Fixture.data("review-threads.json"))

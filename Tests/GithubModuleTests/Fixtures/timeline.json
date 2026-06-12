@@ -1,0 +1,72 @@
+[
+  {
+    "event": "committed",
+    "sha": "45135a5abcdef0123456789aabbccddeeff00112",
+    "message": "[Enhancement]Integrate CallJoinInterceptor to CallKitService\n\nMore details in the body.",
+    "author": { "name": "Ilias Pavlidakis", "email": "i@example.com", "date": "2026-06-12T08:00:00Z" }
+  },
+  {
+    "event": "assigned",
+    "actor": { "login": "ipavlidakis", "avatar_url": "https://a.example/ip.png" },
+    "assignee": { "login": "ipavlidakis", "avatar_url": "https://a.example/ip.png" },
+    "created_at": "2026-06-12T08:01:00Z"
+  },
+  {
+    "event": "review_requested",
+    "actor": { "login": "ipavlidakis", "avatar_url": "https://a.example/ip.png" },
+    "requested_team": { "name": "ios-developers" },
+    "created_at": "2026-06-12T08:02:00Z"
+  },
+  {
+    "event": "labeled",
+    "actor": { "login": "ipavlidakis", "avatar_url": "https://a.example/ip.png" },
+    "label": { "name": "enhancement", "color": "a2eeef" },
+    "created_at": "2026-06-12T08:03:00Z"
+  },
+  {
+    "event": "milestoned",
+    "actor": { "login": "ipavlidakis", "avatar_url": "https://a.example/ip.png" },
+    "milestone": { "title": "1.40.0" },
+    "created_at": "2026-06-12T08:04:00Z"
+  },
+  {
+    "event": "subscribed",
+    "actor": { "login": "someone", "avatar_url": "https://a.example/s.png" },
+    "created_at": "2026-06-12T08:05:00Z"
+  },
+  {
+    "event": "commented",
+    "id": 3001,
+    "actor": { "login": "coderabbitai[bot]", "avatar_url": "https://a.example/cr.png" },
+    "user": { "login": "coderabbitai[bot]", "avatar_url": "https://a.example/cr.png" },
+    "author_association": "NONE",
+    "body": "## Walkthrough\nNo actionable comments were generated in the recent review.",
+    "created_at": "2026-06-12T08:06:00Z",
+    "updated_at": "2026-06-12T09:00:00Z",
+    "reactions": {
+      "total_count": 3,
+      "+1": 2,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 1,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    }
+  },
+  {
+    "event": "reviewed",
+    "user": { "login": "martinmitrevski", "avatar_url": "https://a.example/mm.png" },
+    "state": "approved",
+    "body": "LGTM!",
+    "submitted_at": "2026-06-12T10:00:00Z",
+    "author_association": "MEMBER"
+  },
+  {
+    "event": "renamed",
+    "actor": { "login": "ipavlidakis", "avatar_url": "https://a.example/ip.png" },
+    "rename": { "from": "WIP title", "to": "Final title" },
+    "created_at": "2026-06-12T10:30:00Z"
+  }
+]

@@ -77,6 +77,18 @@ package actor GithubClient {
         return runs
     }
 
+    // MARK: Conversation timeline
+
+    /// The PR conversation in display order: comments, reviews, commits,
+    /// and the label/assignment/review-request events ghpr renders.
+    package func timeline(in repository: GithubRepository, number: Int) async throws -> [GithubTimelineItem] {
+        let items: [GithubTimelineItem] = try await pages(
+            path: "repos/\(repository.fullName)/issues/\(number)/timeline",
+            query: []
+        )
+        return items.filter { $0 != .unknown }
+    }
+
     // MARK: Review threads
 
     package func reviewThreads(in repository: GithubRepository, number: Int) async throws -> [GithubReviewThread] {
@@ -158,6 +170,21 @@ package actor GithubClient {
         }
         try await post(
             path: "repos/\(repository.fullName)/pulls/comments/\(commentId)/reactions",
+            payload: Payload(content: reaction.restValue)
+        )
+    }
+
+    /// Adds an emoji reaction to a conversation (issue) comment.
+    package func addIssueCommentReaction(
+        in repository: GithubRepository,
+        commentId: Int,
+        reaction: GithubReactionContent
+    ) async throws {
+        struct Payload: Encodable {
+            let content: String
+        }
+        try await post(
+            path: "repos/\(repository.fullName)/issues/comments/\(commentId)/reactions",
             payload: Payload(content: reaction.restValue)
         )
     }
