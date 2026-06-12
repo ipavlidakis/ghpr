@@ -20,6 +20,17 @@ jobs:
           sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
           swift --version
 
+      # The tree-sitter grammars dominate build time (huge generated C
+      # parsers); caching checkouts and build artifacts cuts warm runs from
+      # ~12 minutes to ~2.
+      - name: Cache SwiftPM build
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            spm-${{ runner.os }}-
+
       - name: Build distribution tarball
         run: make dist VERSION=${GITHUB_REF_NAME#v}
 
