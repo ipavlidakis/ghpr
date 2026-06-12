@@ -17,7 +17,7 @@ struct ViewedProgressView: View {
                     .rotationEffect(.degrees(-90))
             }
             .frame(width: 14, height: 14)
-            Text("\(viewed) / \(total) viewed")
+            Text(verbatim: "\(viewed) / \(total) viewed")
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }

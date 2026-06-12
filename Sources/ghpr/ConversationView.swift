@@ -131,7 +131,7 @@ struct ConversationView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("\(pullRequest.title) ")
                 .font(.title2.weight(.semibold))
-            + Text("#\(pullRequest.number)")
+            + Text(verbatim: "#\(pullRequest.number)")
                 .font(.title2)
                 .foregroundStyle(.secondary)
 

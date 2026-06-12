@@ -212,7 +212,7 @@ struct ReviewScreen: View {
                 Text(target.title)
                     .font(.callout.weight(tab == target ? .semibold : .regular))
                 if count > 0 {
-                    Text("\(count)")
+                    Text(verbatim: "\(count)")
                         .font(.caption.monospacedDigit())
                         .padding(.horizontal, 6)
                         .padding(.vertical, 1)
@@ -236,7 +236,7 @@ struct ReviewScreen: View {
         HStack(spacing: 12) {
             Text("\(model.data.pullRequest.title) ")
                 .font(.headline)
-            + Text("#\(model.data.pullRequest.number)")
+            + Text(verbatim: "#\(model.data.pullRequest.number)")
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Spacer()

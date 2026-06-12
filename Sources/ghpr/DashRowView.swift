@@ -35,7 +35,7 @@ struct DashRowView: View {
                     }
                 }
                 HStack(spacing: 6) {
-                    Text("#\(pullRequest.number)")
+                    Text(verbatim: "#\(pullRequest.number)")
                     Text("by \(pullRequest.user?.login ?? "ghost")")
                     Text("·")
                     Text(pullRequest.head.ref)
