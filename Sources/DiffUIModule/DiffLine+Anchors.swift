@@ -4,7 +4,7 @@ import Foundation
 extension DiffLine {
     /// The anchors this line answers to: additions on the new side,
     /// deletions on the old side, context lines on both.
-    var anchors: [DiffLineAnchor] {
+    package var anchors: [DiffLineAnchor] {
         switch kind {
         case .addition:
             newLineNumber.map { [.new($0)] } ?? []

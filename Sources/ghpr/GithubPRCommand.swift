@@ -24,7 +24,7 @@ struct GithubPRCommand: ParsableCommand {
     func run() throws {
         let urlArgument = pullRequestURL
 
-        let data = try AsyncBridge.run {
+        let (data, client) = try AsyncBridge.run {
             guard let token = await TokenResolver().resolve() else {
                 throw ValidationError("""
                 No GitHub token found. To authenticate, either:
@@ -36,13 +36,13 @@ struct GithubPRCommand: ParsableCommand {
             let client = GithubClient(token: token.value)
             let reference = try await Self.resolveReference(urlArgument: urlArgument, client: client)
             print("Loading \(reference.repository.fullName) #\(reference.number)…")
-            return try await ReviewData.load(with: client, reference: reference)
+            return (try await ReviewData.load(with: client, reference: reference), client)
         }
 
         MainActor.assumeIsolated {
             AppBootstrap.run(
                 title: "\(data.reference.repository.fullName) #\(data.reference.number) — \(data.pullRequest.title)",
-                content: ReviewScreen(data: data)
+                content: ReviewScreen(model: ReviewModel(data: data, client: client))
             )
         }
     }

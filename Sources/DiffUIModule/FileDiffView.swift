@@ -8,11 +8,13 @@ import SwiftUI
 /// Owns its own scrolling — do not wrap it in a `ScrollView`.
 ///
 /// `annotations` pins arbitrary caller views (review threads — this module
-/// never knows what they are) under the lines they anchor to.
+/// never knows what they are) under the lines they anchor to, and
+/// `onLineClick` reports line clicks for comment composition.
 package struct FileDiffView: View {
     private let fileDiff: FileDiff
     private let highlighter: SyntaxHighlighter
     private let annotations: [DiffLineAnchor: AnyView]
+    private let onLineClick: ((DiffLine) -> Void)?
     private let rows: [DiffRow]
     private let gutterDigits: Int
 
@@ -22,11 +24,13 @@ package struct FileDiffView: View {
     package init(
         fileDiff: FileDiff,
         highlighter: SyntaxHighlighter,
-        annotations: [DiffLineAnchor: AnyView] = [:]
+        annotations: [DiffLineAnchor: AnyView] = [:],
+        onLineClick: ((DiffLine) -> Void)? = nil
     ) {
         self.fileDiff = fileDiff
         self.highlighter = highlighter
         self.annotations = annotations
+        self.onLineClick = onLineClick
         rows = DiffRow.rows(for: fileDiff, annotatedAnchors: Set(annotations.keys))
         gutterDigits = DiffStyle.gutterDigits(for: fileDiff)
     }
@@ -57,7 +61,13 @@ package struct FileDiffView: View {
                 .foregroundStyle(.secondary)
                 .padding(8)
         } else {
-            DiffTableView(rows: rows, gutterDigits: gutterDigits, highlights: highlights, annotations: annotations)
+            DiffTableView(
+                rows: rows,
+                gutterDigits: gutterDigits,
+                highlights: highlights,
+                annotations: annotations,
+                onLineClick: onLineClick
+            )
         }
     }
 }

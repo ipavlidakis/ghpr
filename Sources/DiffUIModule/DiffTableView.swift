@@ -18,9 +18,10 @@ struct DiffTableView: NSViewRepresentable {
     let gutterDigits: Int
     let highlights: FileSyntaxHighlights?
     let annotations: [DiffLineAnchor: AnyView]
+    var onLineClick: ((DiffLine) -> Void)?
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(rows: rows, gutterDigits: gutterDigits, highlights: highlights, annotations: annotations)
+        Coordinator(rows: rows, gutterDigits: gutterDigits, highlights: highlights, annotations: annotations, onLineClick: onLineClick)
     }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -35,6 +36,9 @@ struct DiffTableView: NSViewRepresentable {
         tableView.dataSource = context.coordinator
         tableView.delegate = context.coordinator
 
+        let click = NSClickGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tableClicked(_:)))
+        tableView.addGestureRecognizer(click)
+
         let scrollView = NSScrollView()
         scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
@@ -43,7 +47,7 @@ struct DiffTableView: NSViewRepresentable {
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        context.coordinator.update(rows: rows, gutterDigits: gutterDigits, highlights: highlights, annotations: annotations)
+        context.coordinator.update(rows: rows, gutterDigits: gutterDigits, highlights: highlights, annotations: annotations, onLineClick: onLineClick)
         (scrollView.documentView as? NSTableView)?.reloadData()
     }
 
@@ -59,21 +63,47 @@ struct DiffTableView: NSViewRepresentable {
         private var gutterDigits: Int
         private var highlights: FileSyntaxHighlights?
         private var annotations: [DiffLineAnchor: AnyView]
+        private var onLineClick: ((DiffLine) -> Void)?
         private var annotationCells: [DiffLineAnchor: DiffAnnotationCellView] = [:]
 
-        init(rows: [DiffRow], gutterDigits: Int, highlights: FileSyntaxHighlights?, annotations: [DiffLineAnchor: AnyView]) {
+        init(
+            rows: [DiffRow],
+            gutterDigits: Int,
+            highlights: FileSyntaxHighlights?,
+            annotations: [DiffLineAnchor: AnyView],
+            onLineClick: ((DiffLine) -> Void)?
+        ) {
             self.rows = rows
             self.gutterDigits = gutterDigits
             self.highlights = highlights
             self.annotations = annotations
+            self.onLineClick = onLineClick
         }
 
-        func update(rows: [DiffRow], gutterDigits: Int, highlights: FileSyntaxHighlights?, annotations: [DiffLineAnchor: AnyView]) {
+        func update(
+            rows: [DiffRow],
+            gutterDigits: Int,
+            highlights: FileSyntaxHighlights?,
+            annotations: [DiffLineAnchor: AnyView],
+            onLineClick: ((DiffLine) -> Void)?
+        ) {
             self.rows = rows
             self.gutterDigits = gutterDigits
             self.highlights = highlights
             self.annotations = annotations
+            self.onLineClick = onLineClick
             annotationCells.removeAll()
+        }
+
+        @objc func tableClicked(_ recognizer: NSClickGestureRecognizer) {
+            guard
+                let onLineClick,
+                let tableView = recognizer.view as? NSTableView
+            else { return }
+
+            let index = tableView.row(at: recognizer.location(in: tableView))
+            guard index >= 0, case .line(_, _, let line, _) = rows[index] else { return }
+            onLineClick(line)
         }
 
         func numberOfRows(in tableView: NSTableView) -> Int {
