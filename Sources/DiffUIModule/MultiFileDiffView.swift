@@ -15,6 +15,7 @@ package struct MultiFileDiffView: View {
     private let onCollapseToggle: ((String) -> Void)?
     private let onLineClick: ((String, DiffLine) -> Void)?
     private let onExpandFile: ((String) -> Void)?
+    private let expandedFiles: Set<String>
     private let fileActions: [DiffFileAction]
     private let onVisibleFileChange: ((String) -> Void)?
     private let scrollTarget: DiffScrollTarget?
@@ -32,6 +33,7 @@ package struct MultiFileDiffView: View {
         onCollapseToggle: ((String) -> Void)? = nil,
         onLineClick: ((String, DiffLine) -> Void)? = nil,
         onExpandFile: ((String) -> Void)? = nil,
+        expandedFiles: Set<String> = [],
         fileActions: [DiffFileAction] = [],
         onVisibleFileChange: ((String) -> Void)? = nil,
         scrollTarget: DiffScrollTarget? = nil
@@ -45,6 +47,7 @@ package struct MultiFileDiffView: View {
         self.onCollapseToggle = onCollapseToggle
         self.onLineClick = onLineClick
         self.onExpandFile = onExpandFile
+        self.expandedFiles = expandedFiles
         self.fileActions = fileActions
         self.onVisibleFileChange = onVisibleFileChange
         self.scrollTarget = scrollTarget
@@ -70,6 +73,7 @@ package struct MultiFileDiffView: View {
                 onViewedToggle?(path, isViewed)
             },
             onExpandFile: onExpandFile,
+            expandedFiles: expandedFiles,
             fileActions: fileActions,
             onVisibleFileChange: onVisibleFileChange,
             scrollTarget: scrollTarget

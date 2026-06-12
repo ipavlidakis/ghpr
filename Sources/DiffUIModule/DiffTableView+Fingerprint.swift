@@ -17,6 +17,7 @@ extension DiffTableView {
             }
         }
         hasher.combine(highlightsByFile.keys.sorted())
+        hasher.combine(expandedFiles.sorted())
         hasher.combine(annotations.keys.map { "\($0.path)|\($0.anchor)" }.sorted())
         return hasher.finalize()
     }

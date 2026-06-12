@@ -118,6 +118,7 @@ struct ReviewScreen: View {
                         }
                     }
                 },
+                expandedFiles: Set(expandedFiles.keys),
                 fileActions: fileActions,
                 onVisibleFileChange: { selectedPath = $0 },
                 scrollTarget: scrollTarget

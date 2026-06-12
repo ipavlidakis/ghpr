@@ -25,6 +25,7 @@ struct DiffTableView: NSViewRepresentable {
     var onFileHeaderClick: ((String) -> Void)?
     var onViewedToggle: ((String, Bool) -> Void)?
     var onExpandFile: ((String) -> Void)?
+    var expandedFiles: Set<String> = []
     var fileActions: [DiffFileAction] = []
     var onVisibleFileChange: ((String) -> Void)?
     var scrollTarget: DiffScrollTarget?
@@ -311,7 +312,15 @@ struct DiffTableView: NSViewRepresentable {
                 cell.onViewedToggle = { [weak self] isViewed in
                     self?.view?.onViewedToggle?(file.path, isViewed)
                 }
-                cell.onExpand = view?.onExpandFile.map { expand in { expand(file.path) } }
+                // Nothing left to expand: already expanded, or the diff
+                // necessarily shows the whole file.
+                let isExpandable = view?.expandedFiles.contains(file.path) == false
+                    && file.status != .added
+                    && file.status != .deleted
+                    && !file.isBinary
+                cell.onExpand = isExpandable
+                    ? view?.onExpandFile.map { expand in { expand(file.path) } }
+                    : nil
                 cell.fileActions = view?.fileActions ?? []
                 cell.configure(with: file, isCollapsed: isCollapsed, isViewed: isViewed)
                 return cell
