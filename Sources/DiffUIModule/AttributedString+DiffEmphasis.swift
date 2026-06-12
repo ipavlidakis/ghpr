@@ -1,5 +1,7 @@
+import Foundation
 import SwiftUI
 
+/// Diff-specific construction with emphasized changed ranges.
 extension AttributedString {
     /// Builds line text with the changed ranges tinted.
     ///

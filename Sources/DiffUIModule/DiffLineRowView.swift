@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// One code line: two gutter numbers, the change marker, and the text.

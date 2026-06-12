@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// The `+N −M` change counters shown next to a file.

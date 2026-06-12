@@ -1,6 +1,8 @@
+import Foundation
 import Testing
 import GithubModule
 
+/// Covers the SSH, SSH-URL, HTTPS, and Enterprise remote URL forms.
 @Suite("GithubRepository remote URL parsing")
 struct GithubRepositoryRemoteURLTests {
     private let expected = GithubRepository(owner: "ipavlidakis", name: "ghpr")

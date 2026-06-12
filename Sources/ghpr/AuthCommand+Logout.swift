@@ -1,6 +1,8 @@
 import ArgumentParser
 import AuthenticationModule
+import Foundation
 
+/// The `ghpr auth logout` subcommand.
 extension AuthCommand {
     /// Removes the stored token from the macOS Keychain.
     struct Logout: AsyncParsableCommand {

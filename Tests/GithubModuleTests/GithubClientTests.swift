@@ -2,6 +2,7 @@ import Foundation
 import Testing
 import GithubModule
 
+/// Drives the client against scripted transports replaying captured fixtures.
 @Suite("GithubClient")
 struct GithubClientTests {
     private let repository = GithubRepository(owner: "apple", name: "swift-argument-parser")

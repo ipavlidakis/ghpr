@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// The changed-files list. Selection flows out through `onSelect` only;

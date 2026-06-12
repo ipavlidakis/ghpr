@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// Shared visual constants for diff rendering.

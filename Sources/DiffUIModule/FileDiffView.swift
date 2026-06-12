@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// Renders one file's diff: hunk headers, gutter line numbers, add/delete
@@ -48,12 +49,5 @@ package struct FileDiffView<Annotation: View>: View {
                 }
             }
         }
-    }
-}
-
-extension FileDiffView where Annotation == Never {
-    /// A diff view with no inline annotations.
-    package init(fileDiff: FileDiff) {
-        self.init(fileDiff: fileDiff, annotation: { _ in nil })
     }
 }

@@ -1,3 +1,5 @@
+import Foundation
+
 /// Persistent storage for the user's GitHub token.
 package protocol TokenStore: Sendable {
     func read() async throws -> String?

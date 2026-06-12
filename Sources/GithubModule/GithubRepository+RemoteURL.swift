@@ -1,5 +1,6 @@
 import Foundation
 
+/// Parsing of git remote URLs into repositories.
 extension GithubRepository {
     /// Parses `owner/name` out of a git remote URL.
     ///

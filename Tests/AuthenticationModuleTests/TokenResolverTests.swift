@@ -1,6 +1,8 @@
+import Foundation
 import Testing
 @testable import AuthenticationModule
 
+/// Verifies the resolution chain order, value normalization, and laziness.
 @Suite("TokenResolver chain")
 struct TokenResolverTests {
     @Test("GHPR_TOKEN beats GITHUB_TOKEN, Keychain, and gh")

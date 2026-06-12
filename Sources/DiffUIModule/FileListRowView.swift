@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// One row of the changed-files list.

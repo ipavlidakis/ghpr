@@ -1,3 +1,6 @@
+import Foundation
+
+/// Intra-line emphasis computation over the hunk's deletion/addition pairs.
 extension DiffHunk {
     /// Intra-line changed ranges, keyed by index into `lines`.
     ///

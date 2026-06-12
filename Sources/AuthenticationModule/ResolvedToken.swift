@@ -1,3 +1,5 @@
+import Foundation
+
 /// A GitHub token together with where it came from.
 package struct ResolvedToken: Sendable, Equatable {
     package let value: String

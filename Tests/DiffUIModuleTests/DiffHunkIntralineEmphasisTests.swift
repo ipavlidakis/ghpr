@@ -1,6 +1,8 @@
+import Foundation
 import Testing
 import DiffUIModule
 
+/// Verifies deletion/addition run pairing within a hunk.
 @Suite("DiffHunk intraline emphasis")
 struct DiffHunkIntralineEmphasisTests {
     private func hunk(_ lines: [DiffLine]) -> DiffHunk {

@@ -1,6 +1,8 @@
+import Foundation
 import Testing
 import GithubModule
 
+/// Covers GitHub's pagination `Link` header parsing.
 @Suite("LinkHeader")
 struct LinkHeaderTests {
     @Test("extracts the next page URL")

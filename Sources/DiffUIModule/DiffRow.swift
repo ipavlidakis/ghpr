@@ -1,3 +1,5 @@
+import Foundation
+
 /// One renderable row of a file diff, precomputed so lazy containers
 /// get stable identity and no per-frame work.
 enum DiffRow: Identifiable {
@@ -9,9 +11,7 @@ enum DiffRow: Identifiable {
         case .hunkHeader(let index, _), .line(let index, _, _): index
         }
     }
-}
 
-extension DiffRow {
     /// Flattens hunks into rows, attaching intra-line emphasis.
     static func rows(for fileDiff: FileDiff) -> [DiffRow] {
         var rows: [DiffRow] = []

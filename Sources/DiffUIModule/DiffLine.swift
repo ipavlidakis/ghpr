@@ -1,3 +1,5 @@
+import Foundation
+
 /// One line of a diff hunk, with its position on each side.
 package struct DiffLine: Sendable, Equatable {
     package let kind: DiffLineKind

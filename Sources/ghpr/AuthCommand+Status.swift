@@ -1,6 +1,8 @@
 import ArgumentParser
 import AuthenticationModule
+import Foundation
 
+/// The `ghpr auth status` subcommand.
 extension AuthCommand {
     /// Reports which token ghpr would use and from which source, or how to authenticate.
     struct Status: AsyncParsableCommand {

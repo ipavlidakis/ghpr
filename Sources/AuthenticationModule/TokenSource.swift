@@ -1,3 +1,5 @@
+import Foundation
+
 /// Where a resolved token came from, in the order the chain probes them.
 package enum TokenSource: Sendable, Equatable, CustomStringConvertible {
     case environment(variable: String)

@@ -1,3 +1,5 @@
+import Foundation
+
 /// A contiguous run of changes, as delimited by an `@@` header.
 package struct DiffHunk: Sendable, Equatable {
     /// The full `@@ -old,+new @@ section` header line.

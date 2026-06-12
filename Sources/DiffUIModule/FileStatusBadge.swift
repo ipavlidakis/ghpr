@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// Compact colored letter marking a file's change status.

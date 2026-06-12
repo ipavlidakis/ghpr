@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// File path, status badge, change counts, and the collapse toggle.

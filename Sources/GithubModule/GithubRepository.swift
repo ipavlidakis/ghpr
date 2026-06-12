@@ -1,3 +1,5 @@
+import Foundation
+
 /// A GitHub repository identified by owner and name.
 package struct GithubRepository: Sendable, Equatable, Hashable {
     package let owner: String

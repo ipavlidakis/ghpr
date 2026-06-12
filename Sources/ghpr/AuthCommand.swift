@@ -1,4 +1,5 @@
 import ArgumentParser
+import Foundation
 
 /// Groups the token-management subcommands: `token`, `status`, `logout`.
 struct AuthCommand: ParsableCommand {

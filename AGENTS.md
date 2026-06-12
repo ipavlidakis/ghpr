@@ -14,6 +14,7 @@ Read `PLAN.md` first: it is the source of truth for scope, architecture decision
 ## Conventions
 
 - Naming: prefer `Github` over a `GH` prefix (`GithubClient`, not `GHClient`).
+- Every Swift source file declares its imports explicitly: `import Foundation` is the minimum and must always be present.
 - Cross-module API uses the `package` access level, never `public` — everything ships in one package with one product.
 - Tests use Swift Testing (`import Testing`), never XCTest.
 - Every milestone must build (`swift build`) and pass its tests (`swift test`) before it is committed.

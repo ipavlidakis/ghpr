@@ -2,6 +2,7 @@ import ArgumentParser
 import AuthenticationModule
 import Foundation
 
+/// The `ghpr auth token` subcommand.
 extension AuthCommand {
     /// Reads a personal access token (hidden prompt or stdin) and stores it in the Keychain.
     struct Token: AsyncParsableCommand {

@@ -1,3 +1,5 @@
+import Foundation
+
 /// Counts invocations so tests can assert lower-priority sources are never consulted.
 actor TokenRecorder {
     private let result: String?

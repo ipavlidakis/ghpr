@@ -1,3 +1,5 @@
+import Foundation
+
 /// A single CI check run for a commit.
 package struct GithubCheckRun: Sendable, Equatable, Decodable {
     package let name: String

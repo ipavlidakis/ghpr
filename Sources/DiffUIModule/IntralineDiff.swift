@@ -1,3 +1,5 @@
+import Foundation
+
 /// Word-level difference between a paired deleted and added line,
 /// computed with Myers diff (`CollectionDifference`) over tokens.
 package enum IntralineDiff {

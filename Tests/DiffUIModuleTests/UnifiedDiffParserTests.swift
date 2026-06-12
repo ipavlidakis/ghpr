@@ -1,6 +1,8 @@
+import Foundation
 import Testing
 import DiffUIModule
 
+/// Validates the parser against the captured PR diff and handcrafted edge cases.
 @Suite("UnifiedDiffParser")
 struct UnifiedDiffParserTests {
     private let parser = UnifiedDiffParser()

@@ -1,4 +1,5 @@
 @testable import AuthenticationModule
+import Foundation
 
 /// Test double for `TokenStore`, tracking reads and optionally failing them.
 actor InMemoryTokenStore: TokenStore {

@@ -1,3 +1,5 @@
+import Foundation
+
 /// One side of a pull request: branch name, commit, and owning repository.
 package struct GithubBranchRef: Sendable, Equatable, Decodable {
     package let ref: String

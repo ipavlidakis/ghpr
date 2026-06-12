@@ -1,3 +1,5 @@
+import Foundation
+
 /// Input model of `FileListView`: one changed file and its change counts.
 package struct FileListItem: Sendable, Equatable, Identifiable {
     package let path: String

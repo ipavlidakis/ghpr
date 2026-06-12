@@ -1,3 +1,5 @@
+import Foundation
+
 /// How a file changed within a diff.
 package enum FileDiffStatus: Sendable, Equatable, Hashable {
     case added

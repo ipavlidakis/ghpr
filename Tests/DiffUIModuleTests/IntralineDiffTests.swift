@@ -1,6 +1,8 @@
+import Foundation
 import Testing
 import DiffUIModule
 
+/// Covers tokenization, range merging, and the similarity heuristic.
 @Suite("IntralineDiff")
 struct IntralineDiffTests {
     @Test("a single changed word is emphasized on both sides")

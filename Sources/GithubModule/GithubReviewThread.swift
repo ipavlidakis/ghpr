@@ -1,3 +1,5 @@
+import Foundation
+
 /// An inline review conversation, including its resolution state.
 ///
 /// Sourced from GraphQL because the REST API does not expose thread resolution.

@@ -1,3 +1,5 @@
+import Foundation
+
 /// A non-success response from the GitHub API.
 package struct GithubAPIError: Error, Equatable, CustomStringConvertible {
     package let statusCode: Int

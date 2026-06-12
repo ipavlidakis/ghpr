@@ -1,3 +1,5 @@
+import Foundation
+
 /// Why the current directory cannot be mapped to an open pull request.
 package enum LocalRepositoryError: Error, Equatable, CustomStringConvertible {
     case notAGitRepository(directory: String)

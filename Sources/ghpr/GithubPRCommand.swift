@@ -1,5 +1,7 @@
 import ArgumentParser
+import Foundation
 
+/// The `ghpr` entry point: parses the CLI surface and routes to subcommands.
 @main
 struct GithubPRCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(

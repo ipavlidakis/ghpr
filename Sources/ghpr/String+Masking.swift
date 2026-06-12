@@ -1,3 +1,6 @@
+import Foundation
+
+/// Secret masking for terminal output.
 extension String {
     /// Masks a secret for display, keeping only the first and last four characters.
     var masked: String {

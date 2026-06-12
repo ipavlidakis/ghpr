@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// A single row of the diff body: a hunk header or a code line with

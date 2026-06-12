@@ -1,5 +1,6 @@
 import Foundation
 
+/// GitHub wire-format decoding configuration.
 extension JSONDecoder {
     /// Decoder matching GitHub's wire format: snake_case keys and ISO 8601 dates.
     static var github: JSONDecoder {
