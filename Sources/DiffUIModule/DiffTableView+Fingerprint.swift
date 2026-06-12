@@ -10,9 +10,10 @@ extension DiffTableView {
         hasher.combine(rows.count)
         hasher.combine(gutterDigits)
         for row in rows {
-            if case .fileHeader(_, let file, let isCollapsed) = row {
+            if case .fileHeader(_, let file, let isCollapsed, let isViewed) = row {
                 hasher.combine(file.path)
                 hasher.combine(isCollapsed)
+                hasher.combine(isViewed)
             }
         }
         hasher.combine(highlightsByFile.keys.sorted())

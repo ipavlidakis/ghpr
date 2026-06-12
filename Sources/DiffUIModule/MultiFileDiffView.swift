@@ -15,6 +15,7 @@ package struct MultiFileDiffView: View {
     private let gutterDigits: Int
 
     @State private var collapsedFiles: Set<String> = []
+    @State private var viewedFiles: Set<String> = []
     @State private var highlightsByFile: [String: FileSyntaxHighlights] = [:]
 
     package init(
@@ -39,6 +40,7 @@ package struct MultiFileDiffView: View {
             rows: DiffRow.rows(
                 for: files,
                 collapsedFiles: collapsedFiles,
+                viewedFiles: viewedFiles,
                 annotatedAnchors: annotatedAnchors
             ),
             gutterDigits: gutterDigits,
@@ -47,6 +49,16 @@ package struct MultiFileDiffView: View {
             onLineClick: onLineClick,
             onFileHeaderClick: { path in
                 if !collapsedFiles.insert(path).inserted {
+                    collapsedFiles.remove(path)
+                }
+            },
+            onViewedToggle: { path, isViewed in
+                // Viewed drives collapse, and the chevron stays independent.
+                if isViewed {
+                    viewedFiles.insert(path)
+                    collapsedFiles.insert(path)
+                } else {
+                    viewedFiles.remove(path)
                     collapsedFiles.remove(path)
                 }
             },

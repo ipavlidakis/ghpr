@@ -3,7 +3,7 @@ import Foundation
 /// One renderable row of a diff table, precomputed so the table gets stable
 /// identity and no per-frame work.
 enum DiffRow: Identifiable {
-    case fileHeader(index: Int, file: FileDiff, isCollapsed: Bool)
+    case fileHeader(index: Int, file: FileDiff, isCollapsed: Bool, isViewed: Bool)
     case hunkHeader(index: Int, header: String)
     /// `counterpart` is the paired opposite-side text used for on-demand
     /// intra-line emphasis; `nil` for unpaired or context lines.
@@ -13,7 +13,7 @@ enum DiffRow: Identifiable {
 
     var id: Int {
         switch self {
-        case .fileHeader(let index, _, _): index
+        case .fileHeader(let index, _, _, _): index
         case .hunkHeader(let index, _): index
         case .line(let index, _, _, _, _): index
         case .annotation(let index, _): index
@@ -23,7 +23,7 @@ enum DiffRow: Identifiable {
     /// The path of the file this row belongs to.
     var filePath: String? {
         switch self {
-        case .fileHeader(_, let file, _): file.path
+        case .fileHeader(_, let file, _, _): file.path
         case .hunkHeader: nil
         case .line(_, let file, _, _, _): file
         case .annotation(_, let anchor): anchor.path
@@ -42,12 +42,18 @@ enum DiffRow: Identifiable {
     static func rows(
         for files: [FileDiff],
         collapsedFiles: Set<String>,
+        viewedFiles: Set<String>,
         annotatedAnchors: [String: Set<DiffLineAnchor>]
     ) -> [DiffRow] {
         var rows: [DiffRow] = []
         for file in files {
             let isCollapsed = collapsedFiles.contains(file.path)
-            rows.append(.fileHeader(index: rows.count, file: file, isCollapsed: isCollapsed))
+            rows.append(.fileHeader(
+                index: rows.count,
+                file: file,
+                isCollapsed: isCollapsed,
+                isViewed: viewedFiles.contains(file.path)
+            ))
             if !isCollapsed {
                 appendBody(of: file, annotatedAnchors: annotatedAnchors[file.path] ?? [], to: &rows)
             }

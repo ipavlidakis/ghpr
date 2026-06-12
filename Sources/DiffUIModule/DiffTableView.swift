@@ -23,6 +23,7 @@ struct DiffTableView: NSViewRepresentable {
     let annotations: [DiffFileAnchor: AnyView]
     var onLineClick: ((String, DiffLine) -> Void)?
     var onFileHeaderClick: ((String) -> Void)?
+    var onViewedToggle: ((String, Bool) -> Void)?
     var onVisibleFileChange: ((String) -> Void)?
     var scrollTarget: DiffScrollTarget?
 
@@ -146,7 +147,7 @@ struct DiffTableView: NSViewRepresentable {
             guard
                 let tableView = scrollView.documentView as? NSTableView,
                 let index = rows.firstIndex(where: {
-                    if case .fileHeader(_, let file, _) = $0 { file.path == path } else { false }
+                    if case .fileHeader(_, let file, _, _) = $0 { file.path == path } else { false }
                 })
             else { return }
 
@@ -162,13 +163,19 @@ struct DiffTableView: NSViewRepresentable {
         @objc func tableClicked(_ recognizer: NSClickGestureRecognizer) {
             guard let tableView = recognizer.view as? NSTableView else { return }
 
-            let index = tableView.row(at: recognizer.location(in: tableView))
+            let location = recognizer.location(in: tableView)
+            let index = tableView.row(at: location)
             guard index >= 0 else { return }
 
             switch rows[index] {
             case .line(_, let file, _, let line, _):
                 view?.onLineClick?(file, line)
-            case .fileHeader(_, let file, _):
+            case .fileHeader(_, let file, _, _):
+                // Clicks on the "Viewed" checkbox belong to the checkbox.
+                if let cell = tableView.view(atColumn: 0, row: index, makeIfNecessary: false) as? DiffFileHeaderCellView,
+                   cell.isPointOnViewedControl(cell.convert(location, from: tableView)) {
+                    return
+                }
                 view?.onFileHeaderClick?(file.path)
             case .hunkHeader, .annotation:
                 break
@@ -184,7 +191,7 @@ struct DiffTableView: NSViewRepresentable {
         func tableView(_ tableView: NSTableView, heightOfRow index: Int) -> CGFloat {
             switch rows[index] {
             case .fileHeader:
-                26
+                38
             case .hunkHeader, .line:
                 DiffStyle.rowHeight
             case .annotation(_, let anchor):
@@ -194,7 +201,7 @@ struct DiffTableView: NSViewRepresentable {
 
         func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row index: Int) -> NSView? {
             switch rows[index] {
-            case .fileHeader(_, let file, let isCollapsed):
+            case .fileHeader(_, let file, let isCollapsed, let isViewed):
                 let cell: DiffFileHeaderCellView
                 if let recycled = tableView.makeView(withIdentifier: Self.fileHeaderIdentifier, owner: nil) as? DiffFileHeaderCellView {
                     cell = recycled
@@ -202,7 +209,10 @@ struct DiffTableView: NSViewRepresentable {
                     cell = DiffFileHeaderCellView()
                     cell.identifier = Self.fileHeaderIdentifier
                 }
-                cell.configure(with: file, isCollapsed: isCollapsed)
+                cell.configure(with: file, isCollapsed: isCollapsed, isViewed: isViewed)
+                cell.onViewedToggle = { [weak self] isViewed in
+                    self?.view?.onViewedToggle?(file.path, isViewed)
+                }
                 return cell
             case .hunkHeader, .line:
                 let cell: DiffLineCellView

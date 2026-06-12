@@ -2,19 +2,34 @@ import AppKit
 import Foundation
 
 /// Native table cell for a file's header row in the multi-file table:
-/// collapse chevron, status letter, path, and change counts.
+/// collapse chevron, status letter, path, change counts, and the
+/// GitHub-style "Viewed" checkbox that collapses the file when checked.
 final class DiffFileHeaderCellView: NSView {
     private let textField = NSTextField(labelWithString: "")
+    private let viewedCheckbox = NSButton(checkboxWithTitle: "Viewed", target: nil, action: nil)
+
+    /// Called with the new checked state when the user toggles "Viewed".
+    var onViewedToggle: ((Bool) -> Void)?
 
     override init(frame: NSRect) {
         super.init(frame: frame)
         textField.lineBreakMode = .byTruncatingMiddle
         textField.translatesAutoresizingMaskIntoConstraints = false
         addSubview(textField)
+
+        viewedCheckbox.font = NSFont.systemFont(ofSize: 11)
+        viewedCheckbox.controlSize = .small
+        viewedCheckbox.target = self
+        viewedCheckbox.action = #selector(viewedToggled(_:))
+        viewedCheckbox.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(viewedCheckbox)
+
         NSLayoutConstraint.activate([
             textField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            textField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
-            textField.centerYAnchor.constraint(equalTo: centerYAnchor)
+            textField.trailingAnchor.constraint(lessThanOrEqualTo: viewedCheckbox.leadingAnchor, constant: -12),
+            textField.centerYAnchor.constraint(equalTo: centerYAnchor),
+            viewedCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            viewedCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }
 
@@ -23,7 +38,19 @@ final class DiffFileHeaderCellView: NSView {
         fatalError("not used")
     }
 
-    func configure(with file: FileDiff, isCollapsed: Bool) {
+    /// Whether a point (in this cell's coordinates) lands on the checkbox,
+    /// so the table's row-click handling can stay out of its way.
+    func isPointOnViewedControl(_ point: NSPoint) -> Bool {
+        viewedCheckbox.frame.insetBy(dx: -6, dy: -6).contains(point)
+    }
+
+    @objc private func viewedToggled(_ sender: NSButton) {
+        onViewedToggle?(sender.state == .on)
+    }
+
+    func configure(with file: FileDiff, isCollapsed: Bool, isViewed: Bool) {
+        viewedCheckbox.state = isViewed ? .on : .off
+
         let text = NSMutableAttributedString()
 
         text.append(NSAttributedString(

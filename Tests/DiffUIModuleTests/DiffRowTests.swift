@@ -67,17 +67,18 @@ struct DiffRowTests {
         let rows = DiffRow.rows(
             for: [file, second],
             collapsedFiles: [second.path],
+            viewedFiles: [second.path],
             annotatedAnchors: [:]
         )
 
-        guard case .fileHeader(0, let first, false) = rows[0] else {
-            Issue.record("expected expanded header for the first file")
+        guard case .fileHeader(0, let first, false, false) = rows[0] else {
+            Issue.record("expected expanded, unviewed header for the first file")
             return
         }
         #expect(first.path == "Example.swift")
 
-        guard case .fileHeader(_, let collapsed, true) = rows[rows.count - 1] else {
-            Issue.record("expected collapsed trailing header")
+        guard case .fileHeader(_, let collapsed, true, true) = rows[rows.count - 1] else {
+            Issue.record("expected collapsed, viewed trailing header")
             return
         }
         #expect(collapsed.path == "Other.swift")
