@@ -137,13 +137,16 @@ struct DiffTableView: NSViewRepresentable {
 
         // MARK: Hover
 
-        @objc func mouseMoved(with event: NSEvent) {
+        // Explicit selector names: a tracking-area owner that is not an
+        // NSResponder receives `mouseMoved:`/`mouseExited:`, while Swift
+        // would otherwise export these as `mouseMovedWith:` and never match.
+        @objc(mouseMoved:) func mouseMoved(with event: NSEvent) {
             guard let tableView else { return }
             let point = tableView.convert(event.locationInWindow, from: nil)
             updateHover(at: tableView.row(at: point), in: tableView)
         }
 
-        @objc func mouseExited(with event: NSEvent) {
+        @objc(mouseExited:) func mouseExited(with event: NSEvent) {
             clearHover()
         }
 
