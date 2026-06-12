@@ -25,8 +25,18 @@ struct ReviewScreen: View {
     }
 
     var body: some View {
-        @Bindable var model = model
+        VStack(spacing: 0) {
+            headerBar
+            splitView
+        }
+        .alert("GitHub request failed", isPresented: errorShown) {
+            Button("OK") { model.errorMessage = nil }
+        } message: {
+            Text(model.errorMessage ?? "")
+        }
+    }
 
+    private var splitView: some View {
         NavigationSplitView {
             VStack(spacing: 0) {
                 overviewRow
@@ -53,16 +63,6 @@ struct ReviewScreen: View {
                 ReviewOverviewView(data: model.data)
             }
         }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                submitButton
-            }
-        }
-        .alert("GitHub request failed", isPresented: errorShown) {
-            Button("OK") { model.errorMessage = nil }
-        } message: {
-            Text(model.errorMessage ?? "")
-        }
     }
 
     private var errorShown: Binding<Bool> {
@@ -88,7 +88,26 @@ struct ReviewScreen: View {
         .background(selectedPath == nil ? Color.accentColor.opacity(0.15) : .clear)
     }
 
-    // MARK: Submit (top trailing, like GitHub)
+    // MARK: Header bar (title left, submit top-trailing, like GitHub)
+
+    private var headerBar: some View {
+        HStack(spacing: 12) {
+            Text("\(model.data.pullRequest.title) ")
+                .font(.headline)
+            + Text("#\(model.data.pullRequest.number)")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            submitButton
+        }
+        .lineLimit(1)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(.bar)
+        .overlay(alignment: .bottom) {
+            Divider()
+        }
+    }
 
     private var submitButton: some View {
         Button {
