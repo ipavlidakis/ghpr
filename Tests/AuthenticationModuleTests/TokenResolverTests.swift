@@ -1,48 +1,6 @@
 import Testing
 @testable import AuthenticationModule
 
-private actor InMemoryTokenStore: TokenStore {
-    private var token: String?
-    private let readError: KeychainError?
-    private(set) var readCount = 0
-
-    init(token: String? = nil, readError: KeychainError? = nil) {
-        self.token = token
-        self.readError = readError
-    }
-
-    func read() throws -> String? {
-        readCount += 1
-        if let readError { throw readError }
-        return token
-    }
-
-    func write(_ token: String) {
-        self.token = token
-    }
-
-    @discardableResult
-    func delete() -> Bool {
-        defer { token = nil }
-        return token != nil
-    }
-}
-
-/// Counts invocations so tests can assert lower-priority sources are never consulted.
-private actor TokenRecorder {
-    private let result: String?
-    private(set) var callCount = 0
-
-    init(result: String?) {
-        self.result = result
-    }
-
-    func provide() -> String? {
-        callCount += 1
-        return result
-    }
-}
-
 @Suite("TokenResolver chain")
 struct TokenResolverTests {
     @Test("GHPR_TOKEN beats GITHUB_TOKEN, Keychain, and gh")

@@ -9,8 +9,8 @@ Read `PLAN.md` first: it is the source of truth for scope, architecture decision
 - **Swift concurrency only.** Use async/await and structured concurrency everywhere. Never introduce GCD, locks, semaphores, or completion-handler APIs.
 - **Prefer actors.** Shared mutable state and external resources (Keychain, subprocesses, caches) always live behind actors — never any other synchronization mechanism.
 - **One file per type definition** Each class|struct|enum|protocol|extension gets its own file
-- **Name files format** should be simple, short and clear. If the content of file is an extension the format should be <ExtendedContent><Extension description>
-- **File locations** Modules are placed under Sources/Modules
+- **Name files format** should be simple, short and clear. If the content of file is an extension the format should be <ExtendedContent>+<Extension description>
+- **Docc comments** should be added everywhere whenever it makes sense. Avoid adding unnecessary comments that don't add any value. Keep the comments focused, clean, short and simple.
 ## Conventions
 
 - Naming: prefer `Github` over a `GH` prefix (`GithubClient`, not `GHClient`).
