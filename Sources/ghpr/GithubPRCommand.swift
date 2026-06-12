@@ -2,8 +2,12 @@ import ArgumentParser
 import Foundation
 
 /// The `ghpr` entry point: parses the CLI surface and routes to subcommands.
+///
+/// Deliberately a synchronous `ParsableCommand`: UI commands hand the main
+/// thread to AppKit, which requires the standard (non-async) main. Async
+/// work in subcommands goes through `AsyncBridge`.
 @main
-struct GithubPRCommand: AsyncParsableCommand {
+struct GithubPRCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ghpr",
         abstract: "Review GitHub pull requests in a native macOS window, straight from your terminal.",
@@ -11,7 +15,7 @@ struct GithubPRCommand: AsyncParsableCommand {
         subcommands: [AuthCommand.self, DemoCommand.self]
     )
 
-    func run() async throws {
+    func run() throws {
         // Until current-directory mode lands (milestone 5), bare `ghpr` shows help.
         throw CleanExit.helpRequest()
     }

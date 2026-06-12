@@ -5,14 +5,17 @@ import Foundation
 /// The `ghpr auth status` subcommand.
 extension AuthCommand {
     /// Reports which token ghpr would use and from which source, or how to authenticate.
-    struct Status: AsyncParsableCommand {
+    struct Status: ParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "status",
             abstract: "Show which token ghpr would use, and where it comes from."
         )
 
-        func run() async throws {
-            guard let token = await TokenResolver().resolve() else {
+        func run() throws {
+            let token = try AsyncBridge.run {
+                await TokenResolver().resolve()
+            }
+            guard let token else {
                 print("""
                 No GitHub token found. To authenticate, either:
                   • run `ghpr auth token` to store a personal access token in the Keychain,

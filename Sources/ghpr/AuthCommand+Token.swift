@@ -5,7 +5,7 @@ import Foundation
 /// The `ghpr auth token` subcommand.
 extension AuthCommand {
     /// Reads a personal access token (hidden prompt or stdin) and stores it in the Keychain.
-    struct Token: AsyncParsableCommand {
+    struct Token: ParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "token",
             abstract: "Store a GitHub personal access token in the macOS Keychain.",
@@ -16,9 +16,11 @@ extension AuthCommand {
                 """
         )
 
-        func run() async throws {
+        func run() throws {
             let token = try readToken()
-            try await KeychainTokenStore().write(token)
+            try AsyncBridge.run {
+                try await KeychainTokenStore().write(token)
+            }
             print("Token \(token.masked) saved to the macOS Keychain.")
         }
 

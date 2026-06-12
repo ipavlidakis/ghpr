@@ -17,7 +17,8 @@ struct DemoScreen: View {
     }
 
     private var selectedFile: FileDiff? {
-        files.first { $0.path == selectedPath } ?? files.first
+        // Prefer a code file initially so highlighting is visible at first glance.
+        files.first { $0.path == selectedPath } ?? files.first { $0.languageHint == "swift" } ?? files.first
     }
 
     var body: some View {
