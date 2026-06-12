@@ -23,6 +23,10 @@ final class DiffFileHeaderCellView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         textField.lineBreakMode = .byTruncatingMiddle
+        textField.usesSingleLineMode = true
+        textField.maximumNumberOfLines = 1
+        // Truncate the path rather than pushing the trailing controls out.
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textField.translatesAutoresizingMaskIntoConstraints = false
         addSubview(textField)
 
