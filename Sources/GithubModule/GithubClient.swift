@@ -235,6 +235,9 @@ package actor GithubClient {
 
     private func request(url: URL, accept: String = "application/vnd.github+json") -> URLRequest {
         var request = URLRequest(url: url)
+        // GitHub serves max-age=60; a cached GET would show stale data on
+        // the reload right after a write (e.g. a just-added reaction).
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue(accept, forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")

@@ -34,6 +34,8 @@ struct GithubClientTests {
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
         #expect(request.value(forHTTPHeaderField: "Accept") == "application/vnd.github+json")
         #expect(request.value(forHTTPHeaderField: "X-GitHub-Api-Version") == "2022-11-28")
+        // Reloads after writes must never see GitHub's 60-second cache.
+        #expect(request.cachePolicy == .reloadIgnoringLocalCacheData)
     }
 
     @Test("openPullRequests follows the Link header across pages")
