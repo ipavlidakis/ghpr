@@ -68,6 +68,76 @@ package actor GithubClient {
         return try GithubReviewThreadsQuery.threads(from: data)
     }
 
+    // MARK: Write path
+
+    /// Submits a review: the verdict, an optional summary, and the pending
+    /// inline comments as one batch.
+    package func submitReview(
+        in repository: GithubRepository,
+        number: Int,
+        event: GithubReviewEvent,
+        body: String?,
+        comments: [GithubDraftReviewComment] = []
+    ) async throws {
+        struct Payload: Encodable {
+            let event: String
+            let body: String?
+            let comments: [GithubDraftReviewComment]?
+        }
+        try await post(
+            path: "repos/\(repository.fullName)/pulls/\(number)/reviews",
+            payload: Payload(event: event.rawValue, body: body, comments: comments.isEmpty ? nil : comments)
+        )
+    }
+
+    /// Adds one immediate (non-batched) inline comment.
+    package func addComment(
+        in repository: GithubRepository,
+        number: Int,
+        commitId: String,
+        comment: GithubDraftReviewComment
+    ) async throws {
+        struct Payload: Encodable {
+            let body: String
+            let commitId: String
+            let path: String
+            let line: Int
+            let side: String
+        }
+        try await post(
+            path: "repos/\(repository.fullName)/pulls/\(number)/comments",
+            payload: Payload(body: comment.body, commitId: commitId, path: comment.path, line: comment.line, side: comment.side)
+        )
+    }
+
+    /// Replies to an existing inline comment (and thereby its thread).
+    package func replyToComment(
+        in repository: GithubRepository,
+        number: Int,
+        commentId: Int,
+        body: String
+    ) async throws {
+        struct Payload: Encodable {
+            let body: String
+        }
+        try await post(
+            path: "repos/\(repository.fullName)/pulls/\(number)/comments/\(commentId)/replies",
+            payload: Payload(body: body)
+        )
+    }
+
+    /// Marks a review thread as resolved.
+    package func resolveThread(id: String) async throws {
+        // GraphQL variables are camelCase — no snake_case encoding here.
+        let payload = try JSONEncoder().encode(GithubResolveThreadMutation.request(threadId: id))
+        var request = request(url: apiBaseURL.appending(path: "graphql"))
+        request.httpMethod = "POST"
+        request.httpBody = payload
+
+        let (data, _) = try await send(request)
+        try GithubResolveThreadMutation.validate(data)
+    }
+
     // MARK: Request building
 
     private var perPage: URLQueryItem { URLQueryItem(name: "per_page", value: "100") }
@@ -102,6 +172,13 @@ package actor GithubClient {
             url = LinkHeader.nextURL(from: response.value(forHTTPHeaderField: "Link"))
         }
         return elements
+    }
+
+    private func post(path: String, payload: some Encodable) async throws {
+        var request = request(path: path)
+        request.httpMethod = "POST"
+        request.httpBody = try JSONEncoder.github.encode(payload)
+        _ = try await send(request)
     }
 
     private func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
