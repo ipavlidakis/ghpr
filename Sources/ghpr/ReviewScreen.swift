@@ -219,8 +219,8 @@ struct ReviewScreen: View {
             Spacer()
             if tab == .files {
                 ViewedProgressView(viewed: viewedFiles.count, total: model.data.files.count)
+                submitButton
             }
-            submitButton
         }
         .lineLimit(1)
         .padding(.horizontal, 14)
