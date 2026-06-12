@@ -168,13 +168,10 @@ struct DiffTableView: NSViewRepresentable {
             let index = tableView.clickedRow
             guard index >= 0, index < rows.count else { return }
 
-            switch rows[index] {
-            case .line(_, let file, _, let line, _):
-                view?.onLineClick?(file, line)
-            case .fileHeader(_, let file, _, _):
+            // Commenting goes through each line's hover "+" button, like
+            // GitHub — row clicks only toggle file collapse.
+            if case .fileHeader(_, let file, _, _) = rows[index] {
                 view?.onFileHeaderClick?(file.path)
-            case .hunkHeader, .annotation:
-                break
             }
         }
 
@@ -224,6 +221,13 @@ struct DiffTableView: NSViewRepresentable {
                         view?.highlightsByFile[file]?[location] ?? []
                     } else { [] }
                 cell.configure(with: row, gutterDigits: view?.gutterDigits ?? 3, tokens: tokens)
+                if case .line(_, let file, _, let line, _) = row {
+                    cell.onAddComment = { [weak self] in
+                        self?.view?.onLineClick?(file, line)
+                    }
+                } else {
+                    cell.onAddComment = nil
+                }
                 return cell
             case .annotation(_, let anchor):
                 return annotationCell(for: anchor)

@@ -2,9 +2,14 @@ import AppKit
 import Foundation
 
 /// One recycled table cell: gutter numbers, change marker, and code, rendered
-/// as a single attributed string so a row costs one text field.
+/// as a single attributed string so a row costs one text field. Hovering a
+/// commentable line reveals GitHub's blue "+" button over the gutter.
 final class DiffLineCellView: NSView {
     private let textField = NSTextField(labelWithString: "")
+    private let addCommentButton = NSButton()
+
+    /// Set for commentable rows; the "+" button only appears when non-nil.
+    var onAddComment: (() -> Void)?
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -12,10 +17,27 @@ final class DiffLineCellView: NSView {
         textField.lineBreakMode = .byClipping
         textField.translatesAutoresizingMaskIntoConstraints = false
         addSubview(textField)
+
+        addCommentButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "Add comment")
+        addCommentButton.isBordered = false
+        addCommentButton.contentTintColor = .white
+        addCommentButton.wantsLayer = true
+        addCommentButton.layer?.backgroundColor = NSColor.systemBlue.cgColor
+        addCommentButton.layer?.cornerRadius = 4
+        addCommentButton.isHidden = true
+        addCommentButton.target = self
+        addCommentButton.action = #selector(addCommentClicked)
+        addCommentButton.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(addCommentButton)
+
         NSLayoutConstraint.activate([
             textField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
             textField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
-            textField.centerYAnchor.constraint(equalTo: centerYAnchor)
+            textField.centerYAnchor.constraint(equalTo: centerYAnchor),
+            addCommentButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
+            addCommentButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            addCommentButton.widthAnchor.constraint(equalToConstant: 18),
+            addCommentButton.heightAnchor.constraint(equalToConstant: 16)
         ])
     }
 
@@ -24,7 +46,30 @@ final class DiffLineCellView: NSView {
         fatalError("not used")
     }
 
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(
+            rect: .zero,
+            options: [.inVisibleRect, .mouseEnteredAndExited, .activeInKeyWindow],
+            owner: self
+        ))
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        addCommentButton.isHidden = onAddComment == nil
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        addCommentButton.isHidden = true
+    }
+
+    @objc private func addCommentClicked() {
+        onAddComment?()
+    }
+
     func configure(with row: DiffRow, gutterDigits: Int, tokens: [SyntaxToken]) {
+        addCommentButton.isHidden = true
         switch row {
         case .hunkHeader(_, let header):
             textField.attributedStringValue = NSAttributedString(
