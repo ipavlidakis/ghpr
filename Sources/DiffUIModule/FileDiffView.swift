@@ -1,23 +1,26 @@
 import Foundation
 import SwiftUI
 
-/// Renders one file's diff: hunk headers, gutter line numbers, add/delete
-/// tinting, intra-line word emphasis, per-file collapse, and a per-line
-/// annotation slot the caller fills with arbitrary views (review threads,
-/// comment composers — this module never knows).
-package struct FileDiffView<Annotation: View>: View {
+/// Renders one file's diff: collapsible header plus the fixed-row-height
+/// table of hunk headers and code lines (gutter numbers, add/delete tinting,
+/// on-demand intra-line word emphasis).
+///
+/// Owns its own scrolling — do not wrap it in a `ScrollView`.
+///
+/// Inline annotation slots (review threads) return with milestone 5 as
+/// dedicated table rows; the SwiftUI-`List`-based slot mechanism was removed
+/// with the `NSTableView` row host (see PLAN decision log).
+package struct FileDiffView: View {
     private let fileDiff: FileDiff
-    private let annotation: (DiffLine) -> Annotation?
     private let rows: [DiffRow]
-    private let gutterWidth: CGFloat
+    private let gutterDigits: Int
 
     @State private var isCollapsed = false
 
-    package init(fileDiff: FileDiff, annotation: @escaping (DiffLine) -> Annotation?) {
+    package init(fileDiff: FileDiff) {
         self.fileDiff = fileDiff
-        self.annotation = annotation
         rows = DiffRow.rows(for: fileDiff)
-        gutterWidth = DiffStyle.gutterWidth(for: fileDiff)
+        gutterDigits = DiffStyle.gutterDigits(for: fileDiff)
     }
 
     package var body: some View {
@@ -43,16 +46,7 @@ package struct FileDiffView<Annotation: View>: View {
                 .foregroundStyle(.secondary)
                 .padding(8)
         } else {
-            // List (NSTableView-backed) recycles rows; LazyVStack does not and
-            // drops frames on files with thousands of rows.
-            List(rows) { row in
-                DiffRowView(row: row, gutterWidth: gutterWidth, annotation: annotation)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-            }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .environment(\.defaultMinListRowHeight, 1)
+            DiffTableView(rows: rows, gutterDigits: gutterDigits)
         }
     }
 }
