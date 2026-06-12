@@ -9,19 +9,22 @@ package struct MultiFileDiffView: View {
     private let files: [FileDiff]
     private let highlighter: SyntaxHighlighter
     private let annotations: [DiffFileAnchor: AnyView]
+    private let viewedFiles: Set<String>
+    private let onViewedToggle: ((String, Bool) -> Void)?
     private let onLineClick: ((String, DiffLine) -> Void)?
     private let onVisibleFileChange: ((String) -> Void)?
     private let scrollTarget: DiffScrollTarget?
     private let gutterDigits: Int
 
     @State private var collapsedFiles: Set<String> = []
-    @State private var viewedFiles: Set<String> = []
     @State private var highlightsByFile: [String: FileSyntaxHighlights] = [:]
 
     package init(
         files: [FileDiff],
         highlighter: SyntaxHighlighter,
         annotations: [DiffFileAnchor: AnyView] = [:],
+        viewedFiles: Set<String> = [],
+        onViewedToggle: ((String, Bool) -> Void)? = nil,
         onLineClick: ((String, DiffLine) -> Void)? = nil,
         onVisibleFileChange: ((String) -> Void)? = nil,
         scrollTarget: DiffScrollTarget? = nil
@@ -29,6 +32,8 @@ package struct MultiFileDiffView: View {
         self.files = files
         self.highlighter = highlighter
         self.annotations = annotations
+        self.viewedFiles = viewedFiles
+        self.onViewedToggle = onViewedToggle
         self.onLineClick = onLineClick
         self.onVisibleFileChange = onVisibleFileChange
         self.scrollTarget = scrollTarget
@@ -54,13 +59,13 @@ package struct MultiFileDiffView: View {
             },
             onViewedToggle: { path, isViewed in
                 // Viewed drives collapse, and the chevron stays independent.
+                // The viewed set itself is owned by the parent.
                 if isViewed {
-                    viewedFiles.insert(path)
                     collapsedFiles.insert(path)
                 } else {
-                    viewedFiles.remove(path)
                     collapsedFiles.remove(path)
                 }
+                onViewedToggle?(path, isViewed)
             },
             onVisibleFileChange: onVisibleFileChange,
             scrollTarget: scrollTarget

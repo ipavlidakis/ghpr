@@ -14,6 +14,7 @@ struct ReviewScreen: View {
 
     @State private var tab: ReviewTab = .conversation
     @State private var selectedPath: String?
+    @State private var viewedFiles: Set<String> = []
     @State private var scrollTarget: DiffScrollTarget?
     @State private var composerTarget: DiffFileAnchor?
     @State private var isSubmitPopoverShown = false
@@ -63,6 +64,14 @@ struct ReviewScreen: View {
                 files: model.data.files,
                 highlighter: highlighter,
                 annotations: annotations,
+                viewedFiles: viewedFiles,
+                onViewedToggle: { path, isViewed in
+                    if isViewed {
+                        viewedFiles.insert(path)
+                    } else {
+                        viewedFiles.remove(path)
+                    }
+                },
                 onLineClick: { path, line in
                     composerTarget = line.anchors.first.map { DiffFileAnchor(path: path, anchor: $0) }
                 },
@@ -133,6 +142,9 @@ struct ReviewScreen: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Spacer()
+            if tab == .files {
+                ViewedProgressView(viewed: viewedFiles.count, total: model.data.files.count)
+            }
             submitButton
         }
         .lineLimit(1)
