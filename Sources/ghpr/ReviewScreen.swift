@@ -240,10 +240,14 @@ struct ReviewScreen: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Spacer()
-            if tab == .files {
-                ViewedProgressView(viewed: viewedFiles.count, total: model.data.files.count)
-                submitButton
-            }
+            // Invisible rather than removed off the files tab: the button
+            // defines the header's height, so removing it makes the whole
+            // bar jump between tabs.
+            ViewedProgressView(viewed: viewedFiles.count, total: model.data.files.count)
+                .opacity(tab == .files ? 1 : 0)
+            submitButton
+                .opacity(tab == .files ? 1 : 0)
+                .disabled(tab != .files)
         }
         .lineLimit(1)
         .padding(.horizontal, 14)
