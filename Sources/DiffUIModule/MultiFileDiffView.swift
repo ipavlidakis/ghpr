@@ -10,13 +10,14 @@ package struct MultiFileDiffView: View {
     private let highlighter: SyntaxHighlighter
     private let annotations: [DiffFileAnchor: AnyView]
     private let viewedFiles: Set<String>
+    private let collapsedFiles: Set<String>
     private let onViewedToggle: ((String, Bool) -> Void)?
+    private let onCollapseToggle: ((String) -> Void)?
     private let onLineClick: ((String, DiffLine) -> Void)?
     private let onVisibleFileChange: ((String) -> Void)?
     private let scrollTarget: DiffScrollTarget?
     private let gutterDigits: Int
 
-    @State private var collapsedFiles: Set<String> = []
     @State private var highlightsByFile: [String: FileSyntaxHighlights] = [:]
 
     package init(
@@ -24,7 +25,9 @@ package struct MultiFileDiffView: View {
         highlighter: SyntaxHighlighter,
         annotations: [DiffFileAnchor: AnyView] = [:],
         viewedFiles: Set<String> = [],
+        collapsedFiles: Set<String> = [],
         onViewedToggle: ((String, Bool) -> Void)? = nil,
+        onCollapseToggle: ((String) -> Void)? = nil,
         onLineClick: ((String, DiffLine) -> Void)? = nil,
         onVisibleFileChange: ((String) -> Void)? = nil,
         scrollTarget: DiffScrollTarget? = nil
@@ -33,7 +36,9 @@ package struct MultiFileDiffView: View {
         self.highlighter = highlighter
         self.annotations = annotations
         self.viewedFiles = viewedFiles
+        self.collapsedFiles = collapsedFiles
         self.onViewedToggle = onViewedToggle
+        self.onCollapseToggle = onCollapseToggle
         self.onLineClick = onLineClick
         self.onVisibleFileChange = onVisibleFileChange
         self.scrollTarget = scrollTarget
@@ -53,18 +58,9 @@ package struct MultiFileDiffView: View {
             annotations: annotations,
             onLineClick: onLineClick,
             onFileHeaderClick: { path in
-                if !collapsedFiles.insert(path).inserted {
-                    collapsedFiles.remove(path)
-                }
+                onCollapseToggle?(path)
             },
             onViewedToggle: { path, isViewed in
-                // Viewed drives collapse, and the chevron stays independent.
-                // The viewed set itself is owned by the parent.
-                if isViewed {
-                    collapsedFiles.insert(path)
-                } else {
-                    collapsedFiles.remove(path)
-                }
                 onViewedToggle?(path, isViewed)
             },
             onVisibleFileChange: onVisibleFileChange,

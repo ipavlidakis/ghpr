@@ -15,6 +15,9 @@ struct ReviewScreen: View {
     @State private var tab: ReviewTab = .conversation
     @State private var selectedPath: String?
     @State private var viewedFiles: Set<String> = []
+    @State private var collapsedFiles: Set<String> = []
+
+    private let viewedStore = ViewedFilesStore()
     @State private var scrollTarget: DiffScrollTarget?
     @State private var composerTarget: DiffFileAnchor?
     @State private var isSubmitPopoverShown = false
@@ -36,6 +39,21 @@ struct ReviewScreen: View {
         } message: {
             Text(model.errorMessage ?? "")
         }
+        .task {
+            // Restore viewed marks whose file content is unchanged, and
+            // start those files collapsed.
+            let restored = await viewedStore.viewedPaths(in: pullRequestKey, matching: contentDigests)
+            viewedFiles = restored
+            collapsedFiles.formUnion(restored)
+        }
+    }
+
+    private var pullRequestKey: String {
+        "\(model.data.reference.repository.fullName)#\(model.data.reference.number)"
+    }
+
+    private var contentDigests: [String: String] {
+        Dictionary(uniqueKeysWithValues: model.data.files.map { ($0.path, $0.contentDigest) })
     }
 
     @ViewBuilder
@@ -65,11 +83,23 @@ struct ReviewScreen: View {
                 highlighter: highlighter,
                 annotations: annotations,
                 viewedFiles: viewedFiles,
+                collapsedFiles: collapsedFiles,
                 onViewedToggle: { path, isViewed in
                     if isViewed {
                         viewedFiles.insert(path)
+                        collapsedFiles.insert(path)
                     } else {
                         viewedFiles.remove(path)
+                        collapsedFiles.remove(path)
+                    }
+                    let digest = model.data.files.first { $0.path == path }?.contentDigest ?? ""
+                    Task {
+                        await viewedStore.setViewed(isViewed, path: path, digest: digest, in: pullRequestKey)
+                    }
+                },
+                onCollapseToggle: { path in
+                    if !collapsedFiles.insert(path).inserted {
+                        collapsedFiles.remove(path)
                     }
                 },
                 onLineClick: { path, line in
