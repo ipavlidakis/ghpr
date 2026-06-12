@@ -15,10 +15,6 @@ final class DiffLineCellView: NSView {
         super.init(frame: frame)
         textField.font = DiffStyle.codeFont
         textField.lineBreakMode = .byClipping
-        // Selectable (still non-editable) so code can be copied; selection
-        // is per line — each row is its own field.
-        textField.isSelectable = true
-        textField.focusRingType = .none
         textField.translatesAutoresizingMaskIntoConstraints = false
         addSubview(textField)
 

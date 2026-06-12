@@ -32,7 +32,7 @@ struct DiffTableView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let tableView = NSTableView()
+        let tableView = DiffNSTableView()
         tableView.addTableColumn(NSTableColumn(identifier: Coordinator.columnIdentifier))
         tableView.headerView = nil
         tableView.rowHeight = DiffStyle.rowHeight
@@ -55,6 +55,18 @@ struct DiffTableView: NSViewRepresentable {
             options: [.inVisibleRect, .mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow],
             owner: context.coordinator
         ))
+
+        tableView.isSelectableRow = { [weak coordinator = context.coordinator] index in
+            coordinator?.isSelectableRow(index) ?? false
+        }
+        tableView.onSelectionChange = { [weak coordinator = context.coordinator, weak tableView] range in
+            guard let tableView else { return }
+            coordinator?.selectionChanged(to: range, in: tableView)
+        }
+        tableView.onCopySelection = { [weak coordinator = context.coordinator, weak tableView] in
+            guard let tableView else { return }
+            coordinator?.copySelection(in: tableView)
+        }
 
         let scrollView = NSScrollView()
         scrollView.documentView = tableView
@@ -86,6 +98,7 @@ struct DiffTableView: NSViewRepresentable {
         private weak var hoveredCell: DiffLineCellView?
         private var hoveredRow = -1
         private weak var tableView: NSTableView?
+        private var selectedRowRange: ClosedRange<Int>?
 
         private var rows: [DiffRow] { view?.rows ?? [] }
 
@@ -101,6 +114,9 @@ struct DiffTableView: NSViewRepresentable {
             if fingerprint != oldFingerprint {
                 lastReloadFingerprint = fingerprint
                 annotationCells.removeAll()
+                // Row indices shift when content changes.
+                selectedRowRange = nil
+                (tableView as? DiffNSTableView)?.clearLineSelection()
                 tableView.reloadData()
             }
 
@@ -171,6 +187,43 @@ struct DiffTableView: NSViewRepresentable {
             hoveredCell?.setAddCommentVisible(false)
             hoveredCell = nil
             hoveredRow = -1
+        }
+
+        // MARK: Line selection
+
+        func isSelectableRow(_ index: Int) -> Bool {
+            guard index >= 0, index < rows.count else { return false }
+            if case .line = rows[index] {
+                return true
+            }
+            return false
+        }
+
+        func selectionChanged(to range: ClosedRange<Int>?, in tableView: NSTableView) {
+            selectedRowRange = range
+            // Repaint only what is on screen; freshly scrolled-in rows pick
+            // the state up in rowViewForRow.
+            let visible = tableView.rows(in: tableView.visibleRect)
+            for index in visible.location..<(visible.location + visible.length) {
+                if let rowView = tableView.rowView(atRow: index, makeIfNecessary: false) as? DiffTableRowView {
+                    rowView.isInSelectedRange = range?.contains(index) ?? false
+                }
+            }
+        }
+
+        func copySelection(in tableView: NSTableView) {
+            guard let range = selectedRowRange else { return }
+            let text = range.compactMap { index -> String? in
+                if case .line(_, _, _, let line, _) = rows[index] {
+                    line.text
+                } else {
+                    nil
+                }
+            }.joined(separator: "\n")
+            guard !text.isEmpty else { return }
+
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
         }
 
         private func reportVisibleFile(in scrollView: NSScrollView) {
@@ -308,6 +361,7 @@ struct DiffTableView: NSViewRepresentable {
                 case .deletion: DiffStyle.deletionBackground
                 }
             }
+            rowView.isInSelectedRange = selectedRowRange?.contains(index) ?? false
             return rowView
         }
 
