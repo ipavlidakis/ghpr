@@ -17,4 +17,5 @@ Read `PLAN.md` first: it is the source of truth for scope, architecture decision
 - Every Swift source file declares its imports explicitly: `import Foundation` is the minimum and must always be present.
 - Cross-module API uses the `package` access level, never `public` — everything ships in one package with one product.
 - Tests use Swift Testing (`import Testing`), never XCTest.
+- Prefer `List` over `LazyVStack` in a `ScrollView` for long scrollable content: `List` recycles rows (NSTableView-backed on macOS), lazy stacks do not and drop frames.
 - Every milestone must build (`swift build`) and pass its tests (`swift test`) before it is committed.

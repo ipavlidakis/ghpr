@@ -18,9 +18,9 @@ struct DiffRowView<Annotation: View>: View {
                 .padding(.vertical, 4)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(.quaternary.opacity(0.3))
-        case .line(_, let line, let emphasis):
+        case .line(_, let line, let counterpart):
             VStack(alignment: .leading, spacing: 0) {
-                DiffLineRowView(line: line, emphasis: emphasis, gutterWidth: gutterWidth)
+                DiffLineRowView(line: line, counterpart: counterpart, gutterWidth: gutterWidth)
                 if let annotationView = annotation(line) {
                     annotationView
                         .padding(.leading, gutterWidth * 2 + 16)

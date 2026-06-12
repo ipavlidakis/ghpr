@@ -2,9 +2,13 @@ import Foundation
 import SwiftUI
 
 /// One code line: two gutter numbers, the change marker, and the text.
+///
+/// Intra-line emphasis is computed here, on demand for visible rows only —
+/// one word-level diff per paired line is microseconds, while running all of
+/// them at file-open time froze large files.
 struct DiffLineRowView: View {
     let line: DiffLine
-    let emphasis: [Range<String.Index>]?
+    let counterpart: String?
     let gutterWidth: CGFloat
 
     var body: some View {
@@ -15,12 +19,12 @@ struct DiffLineRowView: View {
                 .font(DiffStyle.codeFont)
                 .foregroundStyle(markerColor)
                 .frame(width: 16)
-            Text(text)
+            text
                 .font(DiffStyle.codeFont)
-                .textSelection(.enabled)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(height: 18)
         .background(background)
     }
 
@@ -32,16 +36,21 @@ struct DiffLineRowView: View {
             .padding(.trailing, 4)
     }
 
-    private var text: AttributedString {
-        if let emphasis, !emphasis.isEmpty {
-            AttributedString(
-                diffText: line.text,
-                emphasis: emphasis,
-                tint: line.kind == .addition ? DiffStyle.additionEmphasis : DiffStyle.deletionEmphasis
-            )
-        } else {
-            AttributedString(line.text)
+    private var text: Text {
+        guard let counterpart else { return Text(verbatim: line.text) }
+
+        let ranges = switch line.kind {
+        case .deletion:
+            IntralineDiff.changedRanges(old: line.text, new: counterpart).old
+        case .addition:
+            IntralineDiff.changedRanges(old: counterpart, new: line.text).new
+        case .context:
+            [Range<String.Index>]()
         }
+        guard !ranges.isEmpty else { return Text(verbatim: line.text) }
+
+        let tint = line.kind == .addition ? DiffStyle.additionEmphasis : DiffStyle.deletionEmphasis
+        return Text(AttributedString(diffText: line.text, emphasis: ranges, tint: tint))
     }
 
     private var marker: String {
