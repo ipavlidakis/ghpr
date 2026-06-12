@@ -20,6 +20,12 @@ let package = Package(
         ),
         .target(name: "AuthenticationModule"),
         .target(name: "GithubModule"),
+        .target(name: "DiffUIModule"),
+        .testTarget(
+            name: "DiffUIModuleTests",
+            dependencies: ["DiffUIModule"],
+            resources: [.copy("Fixtures")]
+        ),
         .testTarget(
             name: "AuthenticationModuleTests",
             dependencies: ["AuthenticationModule"]
