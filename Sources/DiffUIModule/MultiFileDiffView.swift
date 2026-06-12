@@ -14,6 +14,8 @@ package struct MultiFileDiffView: View {
     private let onViewedToggle: ((String, Bool) -> Void)?
     private let onCollapseToggle: ((String) -> Void)?
     private let onLineClick: ((String, DiffLine) -> Void)?
+    private let onExpandFile: ((String) -> Void)?
+    private let fileActions: [DiffFileAction]
     private let onVisibleFileChange: ((String) -> Void)?
     private let scrollTarget: DiffScrollTarget?
     private let gutterDigits: Int
@@ -29,6 +31,8 @@ package struct MultiFileDiffView: View {
         onViewedToggle: ((String, Bool) -> Void)? = nil,
         onCollapseToggle: ((String) -> Void)? = nil,
         onLineClick: ((String, DiffLine) -> Void)? = nil,
+        onExpandFile: ((String) -> Void)? = nil,
+        fileActions: [DiffFileAction] = [],
         onVisibleFileChange: ((String) -> Void)? = nil,
         scrollTarget: DiffScrollTarget? = nil
     ) {
@@ -40,6 +44,8 @@ package struct MultiFileDiffView: View {
         self.onViewedToggle = onViewedToggle
         self.onCollapseToggle = onCollapseToggle
         self.onLineClick = onLineClick
+        self.onExpandFile = onExpandFile
+        self.fileActions = fileActions
         self.onVisibleFileChange = onVisibleFileChange
         self.scrollTarget = scrollTarget
         gutterDigits = files.map(DiffStyle.gutterDigits(for:)).max() ?? 3
@@ -63,6 +69,8 @@ package struct MultiFileDiffView: View {
             onViewedToggle: { path, isViewed in
                 onViewedToggle?(path, isViewed)
             },
+            onExpandFile: onExpandFile,
+            fileActions: fileActions,
             onVisibleFileChange: onVisibleFileChange,
             scrollTarget: scrollTarget
         )

@@ -47,6 +47,17 @@ package actor GithubClient {
         try await pages(path: "repos/\(repository.fullName)/pulls/\(number)/commits", query: [])
     }
 
+    /// The raw contents of a file at a specific ref.
+    package func fileContent(in repository: GithubRepository, path: String, ref: String) async throws -> String {
+        let request = request(
+            path: "repos/\(repository.fullName)/contents/\(path)",
+            query: [URLQueryItem(name: "ref", value: ref)],
+            accept: "application/vnd.github.raw+json"
+        )
+        let (data, _) = try await send(request)
+        return String(decoding: data, as: UTF8.self)
+    }
+
     // MARK: Checks
 
     package func checkRuns(in repository: GithubRepository, ref: String) async throws -> [GithubCheckRun] {

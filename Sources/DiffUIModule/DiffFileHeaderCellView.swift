@@ -6,16 +6,29 @@ import Foundation
 /// GitHub-style "Viewed" checkbox that collapses the file when checked.
 final class DiffFileHeaderCellView: NSView {
     private let textField = NSTextField(labelWithString: "")
+    private let copyButton = NSButton()
+    private let expandButton = NSButton()
+    private let menuButton = NSButton()
     private let viewedCheckbox = NSButton(checkboxWithTitle: "Viewed", target: nil, action: nil)
+
+    private var filePath = ""
 
     /// Called with the new checked state when the user toggles "Viewed".
     var onViewedToggle: ((Bool) -> Void)?
+    /// Expand-all-lines (full file context); the button only shows when set.
+    var onExpand: (() -> Void)?
+    /// Entries of the "…" menu.
+    var fileActions: [DiffFileAction] = []
 
     override init(frame: NSRect) {
         super.init(frame: frame)
         textField.lineBreakMode = .byTruncatingMiddle
         textField.translatesAutoresizingMaskIntoConstraints = false
         addSubview(textField)
+
+        configureIconButton(copyButton, symbol: "doc.on.doc", help: "Copy file name", action: #selector(copyPath))
+        configureIconButton(expandButton, symbol: "rectangle.expand.vertical", help: "Expand all lines", action: #selector(expandTapped))
+        configureIconButton(menuButton, symbol: "ellipsis", help: "More actions", action: #selector(menuTapped(_:)))
 
         viewedCheckbox.font = NSFont.systemFont(ofSize: 11)
         viewedCheckbox.controlSize = .small
@@ -26,10 +39,16 @@ final class DiffFileHeaderCellView: NSView {
 
         NSLayoutConstraint.activate([
             textField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            textField.trailingAnchor.constraint(lessThanOrEqualTo: viewedCheckbox.leadingAnchor, constant: -12),
             textField.centerYAnchor.constraint(equalTo: centerYAnchor),
+            copyButton.leadingAnchor.constraint(equalTo: textField.trailingAnchor, constant: 8),
+            copyButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            expandButton.leadingAnchor.constraint(equalTo: copyButton.trailingAnchor, constant: 6),
+            expandButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            viewedCheckbox.leadingAnchor.constraint(greaterThanOrEqualTo: expandButton.trailingAnchor, constant: 12),
             // Clear of the overlay scroller at the table's trailing edge.
-            viewedCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -28),
+            menuButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -28),
+            menuButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            viewedCheckbox.trailingAnchor.constraint(equalTo: menuButton.leadingAnchor, constant: -10),
             viewedCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }
@@ -39,12 +58,52 @@ final class DiffFileHeaderCellView: NSView {
         fatalError("not used")
     }
 
+    private func configureIconButton(_ button: NSButton, symbol: String, help: String, action: Selector) {
+        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: help)
+        button.isBordered = false
+        button.contentTintColor = .secondaryLabelColor
+        button.toolTip = help
+        button.target = self
+        button.action = action
+        button.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(button)
+    }
+
     @objc private func viewedToggled(_ sender: NSButton) {
         onViewedToggle?(sender.state == .on)
     }
 
+    @objc private func copyPath() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(filePath, forType: .string)
+    }
+
+    @objc private func expandTapped() {
+        onExpand?()
+    }
+
+    @objc private func menuTapped(_ sender: NSButton) {
+        guard !fileActions.isEmpty else { return }
+        let menu = NSMenu()
+        for action in fileActions {
+            let item = NSMenuItem(title: action.title, action: #selector(menuItemSelected(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = action
+            menu.addItem(item)
+        }
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.maxY + 4), in: sender)
+    }
+
+    @objc private func menuItemSelected(_ item: NSMenuItem) {
+        guard let action = item.representedObject as? DiffFileAction else { return }
+        action.handler(filePath)
+    }
+
     func configure(with file: FileDiff, isCollapsed: Bool, isViewed: Bool) {
+        filePath = file.path
         viewedCheckbox.state = isViewed ? .on : .off
+        expandButton.isHidden = onExpand == nil
+        menuButton.isHidden = fileActions.isEmpty
 
         let text = NSMutableAttributedString()
 

@@ -106,6 +106,18 @@ struct GithubClientTests {
         #expect(url.contains("pulls/908/commits"))
     }
 
+    @Test("fileContent requests raw contents at the ref")
+    func fileContent() async throws {
+        let transport = StubTransport(data: Data("let a = 1\n".utf8))
+
+        let content = try await client(transport).fileContent(in: repository, path: "Sources/A.swift", ref: "abc123")
+
+        #expect(content == "let a = 1\n")
+        let request = try #require(await transport.requests.first)
+        #expect(request.url?.absoluteString == "https://api.github.com/repos/apple/swift-argument-parser/contents/Sources/A.swift?ref=abc123")
+        #expect(request.value(forHTTPHeaderField: "Accept") == "application/vnd.github.raw+json")
+    }
+
     @Test("checkRuns unwraps the envelope")
     func checkRuns() async throws {
         let transport = StubTransport(data: try Fixture.data("check-runs.json"))

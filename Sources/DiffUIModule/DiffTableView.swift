@@ -24,6 +24,8 @@ struct DiffTableView: NSViewRepresentable {
     var onLineClick: ((String, DiffLine) -> Void)?
     var onFileHeaderClick: ((String) -> Void)?
     var onViewedToggle: ((String, Bool) -> Void)?
+    var onExpandFile: ((String) -> Void)?
+    var fileActions: [DiffFileAction] = []
     var onVisibleFileChange: ((String) -> Void)?
     var scrollTarget: DiffScrollTarget?
 
@@ -306,10 +308,12 @@ struct DiffTableView: NSViewRepresentable {
                     cell = DiffFileHeaderCellView()
                     cell.identifier = Self.fileHeaderIdentifier
                 }
-                cell.configure(with: file, isCollapsed: isCollapsed, isViewed: isViewed)
                 cell.onViewedToggle = { [weak self] isViewed in
                     self?.view?.onViewedToggle?(file.path, isViewed)
                 }
+                cell.onExpand = view?.onExpandFile.map { expand in { expand(file.path) } }
+                cell.fileActions = view?.fileActions ?? []
+                cell.configure(with: file, isCollapsed: isCollapsed, isViewed: isViewed)
                 return cell
             case .hunkHeader, .line:
                 let cell: DiffLineCellView

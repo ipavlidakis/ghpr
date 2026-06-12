@@ -16,6 +16,7 @@ struct ReviewScreen: View {
     @State private var selectedPath: String?
     @State private var viewedFiles: Set<String> = []
     @State private var collapsedFiles: Set<String> = []
+    @State private var expandedFiles: [String: FileDiff] = [:]
 
     private let viewedStore = ViewedFilesStore()
     @State private var scrollTarget: DiffScrollTarget?
@@ -70,6 +71,11 @@ struct ReviewScreen: View {
         }
     }
 
+    /// Files with any full-context expansions swapped in.
+    private var displayFiles: [FileDiff] {
+        model.data.files.map { expandedFiles[$0.path] ?? $0 }
+    }
+
     private var filesSplitView: some View {
         NavigationSplitView {
             FileListView(items: model.data.files.map(FileListItem.init), selectedPath: selectedPath) { item in
@@ -79,7 +85,7 @@ struct ReviewScreen: View {
             .navigationSplitViewColumnWidth(min: 260, ideal: 340)
         } detail: {
             MultiFileDiffView(
-                files: model.data.files,
+                files: displayFiles,
                 highlighter: highlighter,
                 annotations: annotations,
                 viewedFiles: viewedFiles,
@@ -105,10 +111,33 @@ struct ReviewScreen: View {
                 onLineClick: { path, line in
                     composerTarget = line.anchors.first.map { DiffFileAnchor(path: path, anchor: $0) }
                 },
+                onExpandFile: { path in
+                    Task {
+                        if let expanded = await model.expandedFile(for: path) {
+                            expandedFiles[path] = expanded
+                        }
+                    }
+                },
+                fileActions: fileActions,
                 onVisibleFileChange: { selectedPath = $0 },
                 scrollTarget: scrollTarget
             )
         }
+    }
+
+    /// "…" menu entries: open the file on GitHub at the head revision.
+    private var fileActions: [DiffFileAction] {
+        let repository = model.data.reference.repository.fullName
+        let sha = model.data.pullRequest.head.sha
+        let branch = model.data.pullRequest.head.ref
+        return [
+            DiffFileAction(title: "View file on GitHub") { path in
+                open("https://github.com/\(repository)/blob/\(sha)/\(path)")
+            },
+            DiffFileAction(title: "Edit file on GitHub") { path in
+                open("https://github.com/\(repository)/edit/\(branch)/\(path)")
+            },
+        ]
     }
 
     private var errorShown: Binding<Bool> {

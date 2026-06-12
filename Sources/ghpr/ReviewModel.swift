@@ -94,6 +94,24 @@ final class ReviewModel {
         }
     }
 
+    // MARK: File expansion
+
+    /// The file's diff rebuilt with full context from the head revision.
+    func expandedFile(for path: String) async -> FileDiff? {
+        guard let file = data.files.first(where: { $0.path == path }), !file.isBinary else { return nil }
+        do {
+            let content = try await client.fileContent(
+                in: data.reference.repository,
+                path: path,
+                ref: data.pullRequest.head.sha
+            )
+            return file.expanded(withNewFileContent: content)
+        } catch {
+            errorMessage = "\(error)"
+            return nil
+        }
+    }
+
     // MARK: Plumbing
 
     /// Runs a write, surfaces any error, and refreshes the window on success.
