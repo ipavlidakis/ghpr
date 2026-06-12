@@ -22,7 +22,10 @@ struct ReviewScreen: View {
     @State private var scrollTarget: DiffScrollTarget?
     @State private var composerTarget: DiffFileAnchor?
     @State private var isSubmitPopoverShown = false
-    @State private var collapsedThreads: Set<String> = []
+    /// Threads whose collapse state the user inverted from the default
+    /// (resolved → collapsed). Keyed this way, a thread resolved mid-session
+    /// auto-collapses after the reload, and manual choices survive reloads.
+    @State private var toggledThreads: Set<String> = []
 
     init(model: ReviewModel) {
         self.model = model
@@ -261,10 +264,10 @@ struct ReviewScreen: View {
                 ReviewThreadView(
                     thread: thread,
                     pullRequestAuthor: model.data.pullRequest.user?.login,
-                    isCollapsed: collapsedThreads.contains(thread.id),
+                    isCollapsed: thread.isResolved != toggledThreads.contains(thread.id),
                     onToggleCollapse: {
-                        if !collapsedThreads.insert(thread.id).inserted {
-                            collapsedThreads.remove(thread.id)
+                        if !toggledThreads.insert(thread.id).inserted {
+                            toggledThreads.remove(thread.id)
                         }
                     },
                     onReply: { body in Task { await model.reply(to: thread, body: body) } },
