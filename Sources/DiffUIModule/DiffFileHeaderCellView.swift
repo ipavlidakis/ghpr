@@ -28,7 +28,8 @@ final class DiffFileHeaderCellView: NSView {
             textField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
             textField.trailingAnchor.constraint(lessThanOrEqualTo: viewedCheckbox.leadingAnchor, constant: -12),
             textField.centerYAnchor.constraint(equalTo: centerYAnchor),
-            viewedCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            // Clear of the overlay scroller at the table's trailing edge.
+            viewedCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -28),
             viewedCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }
