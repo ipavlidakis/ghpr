@@ -240,6 +240,12 @@ struct ReviewScreen: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Spacer()
+            Button {
+                open(model.data.pullRequest.htmlUrl)
+            } label: {
+                Label("Open in GitHub", systemImage: "arrow.up.forward.square")
+            }
+            .buttonStyle(.bordered)
             // Invisible rather than removed off the files tab: the button
             // defines the header's height, so removing it makes the whole
             // bar jump between tabs.
