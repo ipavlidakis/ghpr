@@ -47,6 +47,7 @@ struct DiffTableView: NSViewRepresentable {
     final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         static let columnIdentifier = NSUserInterfaceItemIdentifier("diffLine")
         private static let cellIdentifier = NSUserInterfaceItemIdentifier("diffLineCell")
+        private static let rowIdentifier = NSUserInterfaceItemIdentifier("diffRow")
 
         private var rows: [DiffRow]
         private var gutterDigits: Int
@@ -78,15 +79,22 @@ struct DiffTableView: NSViewRepresentable {
         }
 
         func tableView(_ tableView: NSTableView, rowViewForRow index: Int) -> NSTableRowView? {
-            let rowView = NSTableRowView()
-            switch rows[index] {
+            let rowView: DiffTableRowView
+            if let recycled = tableView.makeView(withIdentifier: Self.rowIdentifier, owner: nil) as? DiffTableRowView {
+                rowView = recycled
+            } else {
+                rowView = DiffTableRowView()
+                rowView.identifier = Self.rowIdentifier
+            }
+
+            rowView.tint = switch rows[index] {
             case .hunkHeader:
-                rowView.backgroundColor = DiffStyle.hunkHeaderBackground
+                DiffStyle.hunkHeaderBackground
             case .line(_, let line, _):
                 switch line.kind {
-                case .context: rowView.backgroundColor = .clear
-                case .addition: rowView.backgroundColor = DiffStyle.additionBackground
-                case .deletion: rowView.backgroundColor = DiffStyle.deletionBackground
+                case .context: nil
+                case .addition: DiffStyle.additionBackground
+                case .deletion: DiffStyle.deletionBackground
                 }
             }
             return rowView
