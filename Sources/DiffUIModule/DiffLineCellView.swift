@@ -46,22 +46,11 @@ final class DiffLineCellView: NSView {
         fatalError("not used")
     }
 
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        trackingAreas.forEach(removeTrackingArea)
-        addTrackingArea(NSTrackingArea(
-            rect: .zero,
-            options: [.inVisibleRect, .mouseEnteredAndExited, .activeInKeyWindow],
-            owner: self
-        ))
-    }
-
-    override func mouseEntered(with event: NSEvent) {
-        addCommentButton.isHidden = onAddComment == nil
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        addCommentButton.isHidden = true
+    /// Hover state is owned by the table's coordinator (one tracking area,
+    /// one visible button) — per-cell tracking leaks stale buttons when
+    /// exit events get lost during fast moves or scrolling.
+    func setAddCommentVisible(_ visible: Bool) {
+        addCommentButton.isHidden = !(visible && onAddComment != nil)
     }
 
     @objc private func addCommentClicked() {

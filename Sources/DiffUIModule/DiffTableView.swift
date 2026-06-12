@@ -50,6 +50,12 @@ struct DiffTableView: NSViewRepresentable {
         tableView.target = context.coordinator
         tableView.action = #selector(Coordinator.tableClicked(_:))
 
+        tableView.addTrackingArea(NSTrackingArea(
+            rect: .zero,
+            options: [.inVisibleRect, .mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow],
+            owner: context.coordinator
+        ))
+
         let scrollView = NSScrollView()
         scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
@@ -77,6 +83,9 @@ struct DiffTableView: NSViewRepresentable {
         private var lastReportedFile: String?
         private var lastScrollToken: UUID?
         private var lastReloadFingerprint: Int?
+        private weak var hoveredCell: DiffLineCellView?
+        private var hoveredRow = -1
+        private weak var tableView: NSTableView?
 
         private var rows: [DiffRow] { view?.rows ?? [] }
 
@@ -104,6 +113,7 @@ struct DiffTableView: NSViewRepresentable {
         // MARK: Scroll following
 
         func observeScrolling(of scrollView: NSScrollView) {
+            tableView = scrollView.documentView as? NSTableView
             scrollView.contentView.postsBoundsChangedNotifications = true
             // Selector-based observers are removed automatically on dealloc.
             NotificationCenter.default.addObserver(
@@ -119,7 +129,45 @@ struct DiffTableView: NSViewRepresentable {
                 let clipView = notification.object as? NSClipView,
                 let scrollView = clipView.superview as? NSScrollView
             else { return }
+            // The cursor's row changes under it while scrolling; clear the
+            // hover button until the next mouse move.
+            clearHover()
             reportVisibleFile(in: scrollView)
+        }
+
+        // MARK: Hover
+
+        @objc func mouseMoved(with event: NSEvent) {
+            guard let tableView else { return }
+            let point = tableView.convert(event.locationInWindow, from: nil)
+            updateHover(at: tableView.row(at: point), in: tableView)
+        }
+
+        @objc func mouseExited(with event: NSEvent) {
+            clearHover()
+        }
+
+        private func updateHover(at row: Int, in tableView: NSTableView?) {
+            guard row != hoveredRow else { return }
+            hoveredCell?.setAddCommentVisible(false)
+            hoveredRow = row
+            hoveredCell = nil
+
+            guard
+                let tableView,
+                row >= 0, row < rows.count,
+                case .line = rows[row],
+                let cell = tableView.view(atColumn: 0, row: row, makeIfNecessary: false) as? DiffLineCellView
+            else { return }
+
+            cell.setAddCommentVisible(true)
+            hoveredCell = cell
+        }
+
+        private func clearHover() {
+            hoveredCell?.setAddCommentVisible(false)
+            hoveredCell = nil
+            hoveredRow = -1
         }
 
         private func reportVisibleFile(in scrollView: NSScrollView) {
