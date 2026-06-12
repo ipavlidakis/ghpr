@@ -64,6 +64,7 @@ struct SubmitReviewView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.green)
+                .keyboardShortcut(.return, modifiers: .command)
                 .disabled(isBusy || !isValid)
             }
         }

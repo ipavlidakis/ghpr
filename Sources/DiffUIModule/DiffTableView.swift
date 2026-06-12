@@ -70,6 +70,10 @@ struct DiffTableView: NSViewRepresentable {
             guard let tableView else { return }
             coordinator?.copySelection(in: tableView)
         }
+        tableView.onFileNavigation = { [weak coordinator = context.coordinator, weak tableView] delta in
+            guard let scrollView = tableView?.enclosingScrollView else { return }
+            coordinator?.navigateFile(by: delta, in: scrollView)
+        }
 
         let scrollView = NSScrollView()
         scrollView.documentView = tableView
@@ -252,6 +256,25 @@ struct DiffTableView: NSViewRepresentable {
             guard let path, path != lastReportedFile else { return }
             lastReportedFile = path
             onVisibleFileChange(path)
+        }
+
+        /// j/k navigation: pins the next or previous file header to the top.
+        func navigateFile(by delta: Int, in scrollView: NSScrollView) {
+            guard let tableView = scrollView.documentView as? NSTableView else { return }
+
+            let headerIndices = rows.indices.filter {
+                if case .fileHeader = rows[$0] { true } else { false }
+            }
+            guard !headerIndices.isEmpty else { return }
+
+            let topRow = max(0, tableView.rows(in: tableView.visibleRect).location)
+            // The file owning the top visible row.
+            let currentPosition = (headerIndices.lastIndex { $0 <= topRow }) ?? 0
+            let target = min(max(currentPosition + delta, 0), headerIndices.count - 1)
+
+            if case .fileHeader(_, let file, _, _) = rows[headerIndices[target]] {
+                scroll(to: file.path, in: scrollView)
+            }
         }
 
         private func scroll(to path: String, in scrollView: NSScrollView) {

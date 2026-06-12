@@ -11,7 +11,13 @@ struct DashCommand: ParsableCommand {
         abstract: "Browse the current repository's open pull requests."
     )
 
+    @Flag(help: "Return the terminal immediately; the window keeps running in the background.")
+    var detach = false
+
     func run() throws {
+        if detach {
+            try Detach.relaunchInBackground()
+        }
         let (model, repository) = try AsyncBridge.run { () -> (DashModel, GithubRepository) in
             guard let token = await TokenResolver().resolve() else {
                 throw ValidationError("""

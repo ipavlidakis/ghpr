@@ -16,6 +16,9 @@ struct OpenCommand: ParsableCommand {
     @Argument(help: "A pull request URL (https://github.com/owner/repo/pull/123). Omit to use the current directory's branch.")
     var pullRequestURL: String?
 
+    @Flag(help: "Return the terminal immediately; the window keeps running in the background.")
+    var detach = false
+
     /// Where the command ends up once the network work is done.
     private enum Destination: Sendable {
         case review(ReviewData, GithubClient)
@@ -23,6 +26,10 @@ struct OpenCommand: ParsableCommand {
     }
 
     func run() throws {
+        if detach {
+            try Detach.relaunchInBackground()
+        }
+
         let urlArgument = pullRequestURL
 
         let destination = try AsyncBridge.run { () -> Destination in

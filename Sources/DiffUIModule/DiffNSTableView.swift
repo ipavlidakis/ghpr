@@ -11,6 +11,8 @@ final class DiffNSTableView: NSTableView {
     var onSelectionChange: ((ClosedRange<Int>?) -> Void)?
     /// Copies the current selection to the pasteboard.
     var onCopySelection: (() -> Void)?
+    /// j/k keyboard navigation between files (+1 next, -1 previous).
+    var onFileNavigation: ((Int) -> Void)?
 
     private var anchorRow: Int?
 
@@ -87,5 +89,16 @@ final class DiffNSTableView: NSTableView {
 
     override func cancelOperation(_ sender: Any?) {
         clearLineSelection()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.charactersIgnoringModifiers {
+        case "j":
+            onFileNavigation?(1)
+        case "k":
+            onFileNavigation?(-1)
+        default:
+            super.keyDown(with: event)
+        }
     }
 }

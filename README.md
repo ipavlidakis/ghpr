@@ -1,58 +1,66 @@
 # ghpr
 
-Review GitHub pull requests in a native macOS window, straight from your terminal.
+Review GitHub pull requests in a fully native macOS window, straight from your terminal. No Electron, no webviews — Swift, SwiftUI, and AppKit all the way down.
 
-Pure Swift/SwiftUI — no Electron, no webviews. One command opens a full review window: description, checks, commits, and a fast syntax-highlighted diff with inline comment threads, reactions, pending review batches, and approve / request-changes / comment.
+```bash
+ghpr                                          # review the open PR for the current branch
+ghpr https://github.com/owner/repo/pull/123   # review a specific PR
+ghpr dash                                     # browse the repo's open PRs
+```
+
+## Features
+
+- **Native review window** — PR description (rendered markdown), commits, CI checks, and a continuous, GitHub-style scroll through every changed file with syntax highlighting (tree-sitter), intra-line word diffs, and a file tree sidebar that follows your scroll position.
+- **Full review write path** — inline comments (hover a line for the `+` button), pending review batches, approve / request changes / comment, replies, emoji reactions, and thread resolution.
+- **Viewed tracking** — per-file Viewed checkboxes with progress, persisted across sessions and invalidated automatically when a file's diff changes.
+- **Dashboard** — open PRs with All / Mine / Review-requested filters; selecting one opens a review window in the same process.
+- **Fast on purpose** — fixed-row-height `NSTableView` rendering; a 20k-line patch opens instantly.
+- **Zero git writes** — only read-only queries (`origin` URL, current branch); reviewing is fully remote via the GitHub API.
 
 ## Install
+
+### Homebrew
 
 ```bash
 brew install ipavlidakis/tap/ghpr
 ```
 
-Or from source (requires a recent Xcode):
+Apple Silicon, macOS 14+.
+
+### From source
 
 ```bash
 git clone https://github.com/ipavlidakis/ghpr.git
-cd ghpr && make dist
-# unpack dist/ghpr-*.tar.gz anywhere and keep the bundles next to the binary
+cd ghpr
+make dist   # builds dist/ghpr-v<version>-arm64-macos.tar.gz
 ```
 
-## Authenticate
+The binary is not standalone — the `*.bundle` directories in the tarball must stay next to the executable.
 
-`ghpr` resolves a GitHub token from, in order: the `GHPR_TOKEN` or `GITHUB_TOKEN` environment variables, the macOS Keychain, or a signed-in `gh` CLI (borrowed silently).
+## Authentication
+
+ghpr resolves a token from, in priority order:
+
+1. `GHPR_TOKEN` or `GITHUB_TOKEN` environment variables
+2. the macOS Keychain — store one with `ghpr auth token` (fine-grained PAT with pull-requests read/write and contents read, or a classic token with `repo` scope)
+3. an authenticated [`gh`](https://cli.github.com) CLI, borrowed silently
 
 ```bash
-ghpr auth token     # paste a PAT once, stored in the Keychain
-ghpr auth status    # which token would be used, and where it comes from
-ghpr auth logout    # remove the stored token
+ghpr auth token    # store a PAT in the Keychain
+ghpr auth status   # which token would be used, and where it comes from
+ghpr auth logout   # remove the stored token
 ```
 
-Fine-grained tokens need pull-requests read/write and contents read; classic tokens need the `repo` scope.
+## Usage
 
-## Use
+| Command | Effect |
+| --- | --- |
+| `ghpr` | Open the PR for the current repo + branch, or the dashboard if there is none |
+| `ghpr <pr-url>` | Open that PR |
+| `ghpr dash` | Open the dashboard of open PRs |
+| `ghpr --detach` / `ghpr dash --detach` | Same, but hand the terminal back immediately |
 
-```bash
-ghpr                                          # open the PR for the current branch,
-                                              # or the dashboard if there is none
-ghpr https://github.com/owner/repo/pull/123   # open a specific PR
-ghpr dash                                     # browse the repo's open PRs
-```
-
-Inside the review window:
-
-- **Conversation / Commits / Checks / Files changed** tabs, GitHub-style.
-- Continuous scroll through all files; the sidebar follows your position.
-- Hover a line and click **+** to comment — batch into a review or post immediately.
-- Reply, resolve, and react to existing threads inline.
-- **Viewed** checkboxes per file (persisted across sessions until the file changes).
-- Drag across lines to select; cmd-C or right-click to copy.
-- **Submit review** (top right): comment, approve, or request changes.
-
-## Requirements
-
-- macOS 14+ (Apple Silicon binary; build from source for Intel).
-- A GitHub token (see above). GitHub Enterprise is not supported yet.
+In the review window: click a line's `+` to comment (batch into a review or send immediately), drag across lines to select and copy code, `j`/`k` to jump between files, ⌘↩ to submit your review. Closing the last window exits the process and returns your terminal.
 
 ## Development
 
@@ -60,4 +68,8 @@ Inside the review window:
 swift build && swift test
 ```
 
-The architecture and milestone history live in [PLAN.md](PLAN.md).
+The package is a single product with four targets: `ghpr` (composition root + UI screens), `GithubModule` (REST/GraphQL client), `DiffUIModule` (diff parsing and rendering, GitHub-unaware), and `AuthenticationModule` (token chain). See `PLAN.md` for architecture decisions.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

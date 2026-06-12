@@ -239,6 +239,7 @@ struct ReviewScreen: View {
         }
         .buttonStyle(.borderedProminent)
         .tint(.green)
+        .keyboardShortcut(.return, modifiers: .command)
         .disabled(model.isBusy)
         .popover(isPresented: $isSubmitPopoverShown, arrowEdge: .bottom) {
             SubmitReviewView(
