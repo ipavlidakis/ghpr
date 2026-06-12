@@ -207,6 +207,7 @@ struct GithubClientTests {
         #expect(review.state == "approved")
         #expect(review.authorLogin == "martinmitrevski")
         #expect(review.body == "LGTM!")
+        #expect(review.databaseId == 2877001122)
 
         guard case .event(let renamed) = timeline[7] else {
             Issue.record("expected a rename event, got \(timeline[7])")
@@ -241,7 +242,10 @@ struct GithubClientTests {
         #expect(first.isResolved == true)
         #expect(first.isOutdated == true)
         #expect(first.line == nil)
+        #expect(first.resolvedByLogin == "natecook1000")
         #expect(first.comments.first?.authorLogin == "rgoldberg")
+        #expect(first.comments.first?.diffHunk?.hasPrefix("@@ -53,6 +53,10 @@") == true)
+        #expect(first.reviewDatabaseId == 2877001122)
         #expect(threads.count(where: \.isResolved) == 1)
 
         let request = try #require(await transport.requests.first)

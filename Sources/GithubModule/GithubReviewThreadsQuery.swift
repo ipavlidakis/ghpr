@@ -29,6 +29,7 @@ enum GithubReviewThreadsQuery {
                           line
                           startLine
                           diffSide
+                          resolvedBy { login }
                           comments(first: 100) {
                             nodes {
                               id
@@ -37,6 +38,8 @@ enum GithubReviewThreadsQuery {
                               authorAssociation
                               body
                               createdAt
+                              diffHunk
+                              pullRequestReview { databaseId }
                               reactionGroups {
                                 content
                                 reactors { totalCount }
@@ -84,6 +87,8 @@ enum GithubReviewThreadsQuery {
         }
 
         struct ThreadNode: Decodable {
+            struct ResolvedBy: Decodable { let login: String }
+
             let id: String
             let isResolved: Bool
             let isOutdated: Bool
@@ -91,6 +96,7 @@ enum GithubReviewThreadsQuery {
             let line: Int?
             let startLine: Int?
             let diffSide: String?
+            let resolvedBy: ResolvedBy?
             let comments: CommentConnection
 
             var model: GithubReviewThread {
@@ -102,18 +108,23 @@ enum GithubReviewThreadsQuery {
                     line: line,
                     startLine: startLine,
                     diffSide: diffSide,
+                    resolvedByLogin: resolvedBy?.login,
                     comments: comments.nodes.map(\.model)
                 )
             }
         }
 
         struct CommentNode: Decodable {
+            struct Review: Decodable { let databaseId: Int? }
+
             let id: String
             let databaseId: Int?
             let author: Author?
             let authorAssociation: String?
             let body: String
             let createdAt: Date
+            let diffHunk: String?
+            let pullRequestReview: Review?
             let reactionGroups: [ReactionGroup]?
 
             var model: GithubReviewComment {
@@ -130,7 +141,9 @@ enum GithubReviewThreadsQuery {
                             return nil
                         }
                         return GithubReaction(content: content, count: group.reactors.totalCount)
-                    }
+                    },
+                    diffHunk: diffHunk,
+                    reviewDatabaseId: pullRequestReview?.databaseId
                 )
             }
         }

@@ -14,6 +14,8 @@ package struct GithubReviewThread: Sendable, Equatable {
     package let startLine: Int?
     /// `LEFT` or `RIGHT`.
     package let diffSide: String?
+    /// Who resolved the thread, when resolved.
+    package let resolvedByLogin: String?
     package let comments: [GithubReviewComment]
 
     package init(
@@ -24,6 +26,7 @@ package struct GithubReviewThread: Sendable, Equatable {
         line: Int?,
         startLine: Int?,
         diffSide: String?,
+        resolvedByLogin: String? = nil,
         comments: [GithubReviewComment]
     ) {
         self.id = id
@@ -33,6 +36,12 @@ package struct GithubReviewThread: Sendable, Equatable {
         self.line = line
         self.startLine = startLine
         self.diffSide = diffSide
+        self.resolvedByLogin = resolvedByLogin
         self.comments = comments
+    }
+
+    /// The review this thread was created in, from its first comment.
+    package var reviewDatabaseId: Int? {
+        comments.first?.reviewDatabaseId
     }
 }

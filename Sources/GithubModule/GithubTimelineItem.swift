@@ -74,6 +74,7 @@ package enum GithubTimelineItem: Sendable, Equatable, Decodable {
             case "reviewed":
                 guard let state, let submittedAt else { return .unknown }
                 return .review(GithubReview(
+                    databaseId: id,
                     state: state.lowercased(),
                     authorLogin: user?.login,
                     authorAvatarURL: user?.avatarUrl,

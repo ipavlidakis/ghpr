@@ -206,6 +206,17 @@ package actor GithubClient {
         try GithubResolveThreadMutation.validate(data)
     }
 
+    /// Reopens a resolved review thread.
+    package func unresolveThread(id: String) async throws {
+        let payload = try JSONEncoder().encode(GithubUnresolveThreadMutation.request(threadId: id))
+        var request = request(url: apiBaseURL.appending(path: "graphql"))
+        request.httpMethod = "POST"
+        request.httpBody = payload
+
+        let (data, _) = try await send(request)
+        try GithubUnresolveThreadMutation.validate(data)
+    }
+
     // MARK: Request building
 
     private var perPage: URLQueryItem { URLQueryItem(name: "per_page", value: "100") }

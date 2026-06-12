@@ -80,6 +80,12 @@ final class ReviewModel {
         }
     }
 
+    func unresolve(thread: GithubReviewThread) async {
+        await perform {
+            try await self.client.unresolveThread(id: thread.id)
+        }
+    }
+
     func react(to comment: GithubReviewComment, with reaction: GithubReactionContent) async {
         guard let commentId = comment.databaseId else {
             errorMessage = "This comment cannot be reacted to."

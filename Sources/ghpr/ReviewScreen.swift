@@ -74,9 +74,7 @@ struct ReviewScreen: View {
     private var content: some View {
         switch tab {
         case .conversation:
-            ConversationView(data: model.data) { comment, reaction in
-                Task { await model.react(toIssueComment: comment, with: reaction) }
-            }
+            ConversationView(model: model)
         case .commits:
             CommitsListView(commits: model.data.commits)
         case .checks:

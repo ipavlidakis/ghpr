@@ -3,11 +3,12 @@ import GithubModule
 import SwiftUI
 
 /// The Conversation tab: PR header and description, the full timeline
-/// (comments, reviews, commits, events), and the metadata sidebar.
+/// (comments, reviews with their threads, commits, events), and the
+/// metadata sidebar.
 struct ConversationView: View {
-    let data: ReviewData
-    let onReactToComment: (GithubIssueComment, GithubReactionContent) -> Void
+    let model: ReviewModel
 
+    private var data: ReviewData { model.data }
     private var pullRequest: GithubPullRequest { data.pullRequest }
 
     var body: some View {
@@ -60,10 +61,12 @@ struct ConversationView: View {
                 isEdited: comment.isEdited,
                 text: comment.body,
                 reactions: comment.reactions,
-                onReact: { onReactToComment(comment, $0) }
+                onReact: { reaction in
+                    Task { await model.react(toIssueComment: comment, with: reaction) }
+                }
             )
         case .review(let review):
-            ConversationReviewView(review: review)
+            reviewItem(review)
         case .commit(let commit):
             ConversationCommitRowView(commit: commit)
         case .event(let event):
@@ -71,6 +74,31 @@ struct ConversationView: View {
         case .unknown:
             EmptyView()
         }
+    }
+
+    /// A review row followed by the thread cards it created.
+    private func reviewItem(_ review: GithubReview) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ConversationReviewView(review: review)
+            ForEach(threads(of: review), id: \.id) { thread in
+                ConversationThreadCard(
+                    thread: thread,
+                    pullRequestAuthor: pullRequest.user?.login,
+                    onReply: { body in Task { await model.reply(to: thread, body: body) } },
+                    onResolve: { Task { await model.resolve(thread: thread) } },
+                    onUnresolve: { Task { await model.unresolve(thread: thread) } },
+                    onReact: { comment, reaction in Task { await model.react(to: comment, with: reaction) } }
+                )
+                .padding(.leading, 26)
+            }
+        }
+    }
+
+    private func threads(of review: GithubReview) -> [GithubReviewThread] {
+        guard let reviewId = review.databaseId else { return [] }
+        return data.threads
+            .filter { $0.reviewDatabaseId == reviewId }
+            .sorted { ($0.comments.first?.createdAt ?? .distantPast) < ($1.comments.first?.createdAt ?? .distantPast) }
     }
 
     // MARK: Header
