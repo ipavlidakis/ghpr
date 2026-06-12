@@ -1,0 +1,412 @@
+[
+  {
+    "sha": "fc86f29de0e3c208c5709491d03b0223097c4b22",
+    "node_id": "C_kwDODmuHYdoAKGZjODZmMjlkZTBlM2MyMDhjNTcwOTQ5MWQwM2IwMjIzMDk3YzRiMjI",
+    "commit": {
+      "author": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-26T16:16:05Z"
+      },
+      "committer": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-26T16:16:05Z"
+      },
+      "message": "Revert source break in 1.8.0 `parse` methods\n\nThis removes the `async` overloads to `parse` and `parseAsRoot`\nthat caused a source break in 1.8.0, and introduces new names\nthat disambiguate the methods with `async` behavior. Instead of\ncalling the existing methods with the `await` keyword, users can\ncall `await asyncParse` or `await asyncParseAsRoot`.\n\nThis change also adds a validation step to the synchronous parsing\npath to check if an async completions function is called.\n\nUsers that have already updated their code to work around the\nsource break will revert to the old methods with this change,\nwhich will yield a \"No 'async' operations occur within 'await'\nexpression\" warning. They can remove the `await` keyword or update\nto call the async versions directly to fix the warning.",
+      "tree": {
+        "sha": "b919a21ea4e773d32db83b5a866388a367207b10",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/git/trees/b919a21ea4e773d32db83b5a866388a367207b10"
+      },
+      "url": "https://api.github.com/repos/apple/swift-argument-parser/git/commits/fc86f29de0e3c208c5709491d03b0223097c4b22",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/fc86f29de0e3c208c5709491d03b0223097c4b22",
+    "html_url": "https://github.com/apple/swift-argument-parser/commit/fc86f29de0e3c208c5709491d03b0223097c4b22",
+    "comments_url": "https://api.github.com/repos/apple/swift-argument-parser/commits/fc86f29de0e3c208c5709491d03b0223097c4b22/comments",
+    "author": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "2ba6fc95a78a80d00767fc9f8401fefac47e1fcc",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/2ba6fc95a78a80d00767fc9f8401fefac47e1fcc",
+        "html_url": "https://github.com/apple/swift-argument-parser/commit/2ba6fc95a78a80d00767fc9f8401fefac47e1fcc"
+      }
+    ]
+  },
+  {
+    "sha": "5bc55a3e5ddc15cccc03efd34bc5317917d4dbd5",
+    "node_id": "C_kwDODmuHYdoAKDViYzU1YTNlNWRkYzE1Y2NjYzAzZWZkMzRiYzUzMTc5MTdkNGRiZDU",
+    "commit": {
+      "author": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-26T16:25:48Z"
+      },
+      "committer": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-26T16:25:48Z"
+      },
+      "message": "Temporarily disable API breakage check",
+      "tree": {
+        "sha": "e8b90c6ccec3d52a9f9822561db1cc1879f6ecbc",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/git/trees/e8b90c6ccec3d52a9f9822561db1cc1879f6ecbc"
+      },
+      "url": "https://api.github.com/repos/apple/swift-argument-parser/git/commits/5bc55a3e5ddc15cccc03efd34bc5317917d4dbd5",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/5bc55a3e5ddc15cccc03efd34bc5317917d4dbd5",
+    "html_url": "https://github.com/apple/swift-argument-parser/commit/5bc55a3e5ddc15cccc03efd34bc5317917d4dbd5",
+    "comments_url": "https://api.github.com/repos/apple/swift-argument-parser/commits/5bc55a3e5ddc15cccc03efd34bc5317917d4dbd5/comments",
+    "author": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "fc86f29de0e3c208c5709491d03b0223097c4b22",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/fc86f29de0e3c208c5709491d03b0223097c4b22",
+        "html_url": "https://github.com/apple/swift-argument-parser/commit/fc86f29de0e3c208c5709491d03b0223097c4b22"
+      }
+    ]
+  },
+  {
+    "sha": "e5928bbcefc2d6dc805030476739a3b01380362e",
+    "node_id": "C_kwDODmuHYdoAKGU1OTI4YmJjZWZjMmQ2ZGM4MDUwMzA0NzY3MzlhM2IwMTM4MDM2MmU",
+    "commit": {
+      "author": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-26T16:27:02Z"
+      },
+      "committer": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-26T16:27:02Z"
+      },
+      "message": "s/ /  /",
+      "tree": {
+        "sha": "73023622729995d1f0eb5f1e558a2cb7d21c8028",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/git/trees/73023622729995d1f0eb5f1e558a2cb7d21c8028"
+      },
+      "url": "https://api.github.com/repos/apple/swift-argument-parser/git/commits/e5928bbcefc2d6dc805030476739a3b01380362e",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/e5928bbcefc2d6dc805030476739a3b01380362e",
+    "html_url": "https://github.com/apple/swift-argument-parser/commit/e5928bbcefc2d6dc805030476739a3b01380362e",
+    "comments_url": "https://api.github.com/repos/apple/swift-argument-parser/commits/e5928bbcefc2d6dc805030476739a3b01380362e/comments",
+    "author": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "5bc55a3e5ddc15cccc03efd34bc5317917d4dbd5",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/5bc55a3e5ddc15cccc03efd34bc5317917d4dbd5",
+        "html_url": "https://github.com/apple/swift-argument-parser/commit/5bc55a3e5ddc15cccc03efd34bc5317917d4dbd5"
+      }
+    ]
+  },
+  {
+    "sha": "a22f4e901cb6d6d69ad2bd3118bd3578f36b5698",
+    "node_id": "C_kwDODmuHYdoAKGEyMmY0ZTkwMWNiNmQ2ZDY5YWQyYmQzMTE4YmQzNTc4ZjM2YjU2OTg",
+    "commit": {
+      "author": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-26T16:50:29Z"
+      },
+      "committer": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-26T16:50:29Z"
+      },
+      "message": "Add availability guard",
+      "tree": {
+        "sha": "69f3515ef12aa9ab9437e9d61167741c64c6d5a5",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/git/trees/69f3515ef12aa9ab9437e9d61167741c64c6d5a5"
+      },
+      "url": "https://api.github.com/repos/apple/swift-argument-parser/git/commits/a22f4e901cb6d6d69ad2bd3118bd3578f36b5698",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/a22f4e901cb6d6d69ad2bd3118bd3578f36b5698",
+    "html_url": "https://github.com/apple/swift-argument-parser/commit/a22f4e901cb6d6d69ad2bd3118bd3578f36b5698",
+    "comments_url": "https://api.github.com/repos/apple/swift-argument-parser/commits/a22f4e901cb6d6d69ad2bd3118bd3578f36b5698/comments",
+    "author": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "e5928bbcefc2d6dc805030476739a3b01380362e",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/e5928bbcefc2d6dc805030476739a3b01380362e",
+        "html_url": "https://github.com/apple/swift-argument-parser/commit/e5928bbcefc2d6dc805030476739a3b01380362e"
+      }
+    ]
+  },
+  {
+    "sha": "4157f4816b1736210581a02886d9f85d5fe6c589",
+    "node_id": "C_kwDODmuHYdoAKDQxNTdmNDgxNmIxNzM2MjEwNTgxYTAyODg2ZDlmODVkNWZlNmM1ODk",
+    "commit": {
+      "author": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-27T00:31:41Z"
+      },
+      "committer": {
+        "name": "Nate Cook",
+        "email": "natecook@apple.com",
+        "date": "2026-05-27T00:32:33Z"
+      },
+      "message": "Address feedback from @rgoldberg",
+      "tree": {
+        "sha": "7c197257adab5345151bc45e62e985e88af1a8b3",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/git/trees/7c197257adab5345151bc45e62e985e88af1a8b3"
+      },
+      "url": "https://api.github.com/repos/apple/swift-argument-parser/git/commits/4157f4816b1736210581a02886d9f85d5fe6c589",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/4157f4816b1736210581a02886d9f85d5fe6c589",
+    "html_url": "https://github.com/apple/swift-argument-parser/commit/4157f4816b1736210581a02886d9f85d5fe6c589",
+    "comments_url": "https://api.github.com/repos/apple/swift-argument-parser/commits/4157f4816b1736210581a02886d9f85d5fe6c589/comments",
+    "author": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "natecook1000",
+      "id": 7053374,
+      "node_id": "MDQ6VXNlcjcwNTMzNzQ=",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7053374?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/natecook1000",
+      "html_url": "https://github.com/natecook1000",
+      "followers_url": "https://api.github.com/users/natecook1000/followers",
+      "following_url": "https://api.github.com/users/natecook1000/following{/other_user}",
+      "gists_url": "https://api.github.com/users/natecook1000/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/natecook1000/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/natecook1000/subscriptions",
+      "organizations_url": "https://api.github.com/users/natecook1000/orgs",
+      "repos_url": "https://api.github.com/users/natecook1000/repos",
+      "events_url": "https://api.github.com/users/natecook1000/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/natecook1000/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "a22f4e901cb6d6d69ad2bd3118bd3578f36b5698",
+        "url": "https://api.github.com/repos/apple/swift-argument-parser/commits/a22f4e901cb6d6d69ad2bd3118bd3578f36b5698",
+        "html_url": "https://github.com/apple/swift-argument-parser/commit/a22f4e901cb6d6d69ad2bd3118bd3578f36b5698"
+      }
+    ]
+  }
+]

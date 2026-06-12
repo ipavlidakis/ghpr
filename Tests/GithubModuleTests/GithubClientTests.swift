@@ -90,6 +90,22 @@ struct GithubClientTests {
         #expect(request.value(forHTTPHeaderField: "Accept") == "application/vnd.github.diff")
     }
 
+    @Test("commits decode from the captured fixture")
+    func commits() async throws {
+        let transport = StubTransport(data: try Fixture.data("commits.json"))
+
+        let commits = try await client(transport).commits(in: repository, number: 908)
+
+        #expect(commits.count == 5)
+        let first = try #require(commits.first)
+        #expect(first.shortSha == "fc86f29")
+        #expect(first.summary == "Revert source break in 1.8.0 `parse` methods")
+        #expect(first.authorName == "natecook1000")
+        #expect(first.authoredAt != nil)
+        let url = try #require(await transport.requests.first?.url?.absoluteString)
+        #expect(url.contains("pulls/908/commits"))
+    }
+
     @Test("checkRuns unwraps the envelope")
     func checkRuns() async throws {
         let transport = StubTransport(data: try Fixture.data("check-runs.json"))

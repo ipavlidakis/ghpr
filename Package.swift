@@ -74,6 +74,11 @@ let package = Package(
             name: "GithubModuleTests",
             dependencies: ["GithubModule"],
             resources: [.copy("Fixtures")]
+        ),
+        .testTarget(
+            name: "ghprTests",
+            dependencies: ["ghpr"],
+            resources: [.copy("Fixtures")]
         )
     ]
 )

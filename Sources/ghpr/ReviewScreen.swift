@@ -12,6 +12,7 @@ struct ReviewScreen: View {
     private let model: ReviewModel
     private let highlighter = SyntaxHighlighter()
 
+    @State private var tab: ReviewTab = .conversation
     @State private var selectedPath: String?
     @State private var scrollTarget: DiffScrollTarget?
     @State private var composerTarget: DiffFileAnchor?
@@ -25,7 +26,9 @@ struct ReviewScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             headerBar
-            splitView
+            tabBar
+            Divider()
+            content
         }
         .alert("GitHub request failed", isPresented: errorShown) {
             Button("OK") { model.errorMessage = nil }
@@ -34,32 +37,38 @@ struct ReviewScreen: View {
         }
     }
 
-    private var splitView: some View {
+    @ViewBuilder
+    private var content: some View {
+        switch tab {
+        case .conversation:
+            ReviewOverviewView(data: model.data)
+        case .commits:
+            CommitsListView(commits: model.data.commits)
+        case .checks:
+            ChecksListView(checkRuns: model.data.checkRuns)
+        case .files:
+            filesSplitView
+        }
+    }
+
+    private var filesSplitView: some View {
         NavigationSplitView {
-            VStack(spacing: 0) {
-                overviewRow
-                Divider()
-                FileListView(items: model.data.files.map(FileListItem.init), selectedPath: selectedPath) { item in
-                    selectedPath = item.path
-                    scrollTarget = DiffScrollTarget(path: item.path)
-                }
-                .navigationSplitViewColumnWidth(min: 260, ideal: 340)
+            FileListView(items: model.data.files.map(FileListItem.init), selectedPath: selectedPath) { item in
+                selectedPath = item.path
+                scrollTarget = DiffScrollTarget(path: item.path)
             }
+            .navigationSplitViewColumnWidth(min: 260, ideal: 340)
         } detail: {
-            if selectedPath == nil {
-                ReviewOverviewView(data: model.data)
-            } else {
-                MultiFileDiffView(
-                    files: model.data.files,
-                    highlighter: highlighter,
-                    annotations: annotations,
-                    onLineClick: { path, line in
-                        composerTarget = line.anchors.first.map { DiffFileAnchor(path: path, anchor: $0) }
-                    },
-                    onVisibleFileChange: { selectedPath = $0 },
-                    scrollTarget: scrollTarget
-                )
-            }
+            MultiFileDiffView(
+                files: model.data.files,
+                highlighter: highlighter,
+                annotations: annotations,
+                onLineClick: { path, line in
+                    composerTarget = line.anchors.first.map { DiffFileAnchor(path: path, anchor: $0) }
+                },
+                onVisibleFileChange: { selectedPath = $0 },
+                scrollTarget: scrollTarget
+            )
         }
     }
 
@@ -70,20 +79,48 @@ struct ReviewScreen: View {
         )
     }
 
-    private var overviewRow: some View {
+    // MARK: Tabs
+
+    private var tabBar: some View {
+        HStack(spacing: 4) {
+            tabButton(.conversation, count: model.data.threads.count)
+            tabButton(.commits, count: model.data.commits.count)
+            tabButton(.checks, count: model.data.checkRuns.count)
+            tabButton(.files, count: model.data.files.count)
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.bar)
+    }
+
+    private func tabButton(_ target: ReviewTab, count: Int) -> some View {
         Button {
-            selectedPath = nil
-            composerTarget = nil
+            tab = target
         } label: {
-            Label("Overview", systemImage: "list.bullet.rectangle")
-                .font(.callout.weight(.medium))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(.rect)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+            HStack(spacing: 6) {
+                Image(systemName: target.systemImage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(target.title)
+                    .font(.callout.weight(tab == target ? .semibold : .regular))
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.caption.monospacedDigit())
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(.quaternary.opacity(0.7), in: .capsule)
+                }
+            }
+            .contentShape(.rect)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                tab == target ? AnyShapeStyle(.quaternary.opacity(0.55)) : AnyShapeStyle(.clear),
+                in: .rect(cornerRadius: 6)
+            )
         }
         .buttonStyle(.plain)
-        .background(selectedPath == nil ? Color.accentColor.opacity(0.15) : .clear)
     }
 
     // MARK: Header bar (title left, submit top-trailing, like GitHub)

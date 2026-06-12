@@ -2,8 +2,8 @@ import Foundation
 import GithubModule
 import SwiftUI
 
-/// The PR's description and metadata: state, author, branches, labels,
-/// reviewers, markdown body, and CI check runs.
+/// The Conversation tab: the PR's state, author, branches, labels,
+/// reviewers, and markdown description.
 struct ReviewOverviewView: View {
     let data: ReviewData
 
@@ -18,10 +18,6 @@ struct ReviewOverviewView: View {
                 }
                 Divider()
                 description
-                if !data.checkRuns.isEmpty {
-                    Divider()
-                    checks
-                }
             }
             .padding(20)
             .frame(maxWidth: 760, alignment: .leading)
@@ -96,51 +92,12 @@ struct ReviewOverviewView: View {
     private var description: some View {
         Group {
             if let body = pullRequest.body, !body.isEmpty {
-                Text(AttributedString(githubMarkdown: body))
-                    .textSelection(.enabled)
+                MarkdownView(text: body)
             } else {
                 Text("No description provided.")
                     .foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var checks: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Checks")
-                .font(.headline)
-            ForEach(data.checkRuns, id: \.name) { run in
-                HStack(spacing: 6) {
-                    Image(systemName: symbol(for: run))
-                        .foregroundStyle(color(for: run))
-                    Text(run.name)
-                        .font(.callout)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer()
-                }
-            }
-        }
-    }
-
-    private func symbol(for run: GithubCheckRun) -> String {
-        switch run.conclusion {
-        case "success": "checkmark.circle.fill"
-        case "failure", "timed_out": "xmark.circle.fill"
-        case "cancelled": "slash.circle.fill"
-        case "skipped", "neutral": "minus.circle.fill"
-        case "action_required": "exclamationmark.circle.fill"
-        default: run.status == "completed" ? "questionmark.circle" : "clock.fill"
-        }
-    }
-
-    private func color(for run: GithubCheckRun) -> Color {
-        switch run.conclusion {
-        case "success": .green
-        case "failure", "timed_out", "action_required": .red
-        case "cancelled", "skipped", "neutral": .secondary
-        default: run.status == "completed" ? .secondary : .orange
-        }
     }
 }

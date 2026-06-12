@@ -43,6 +43,10 @@ package actor GithubClient {
         return String(decoding: data, as: UTF8.self)
     }
 
+    package func commits(in repository: GithubRepository, number: Int) async throws -> [GithubCommit] {
+        try await pages(path: "repos/\(repository.fullName)/pulls/\(number)/commits", query: [])
+    }
+
     // MARK: Checks
 
     package func checkRuns(in repository: GithubRepository, ref: String) async throws -> [GithubCheckRun] {
