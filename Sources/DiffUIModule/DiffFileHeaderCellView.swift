@@ -38,12 +38,6 @@ final class DiffFileHeaderCellView: NSView {
         fatalError("not used")
     }
 
-    /// Whether a point (in this cell's coordinates) lands on the checkbox,
-    /// so the table's row-click handling can stay out of its way.
-    func isPointOnViewedControl(_ point: NSPoint) -> Bool {
-        viewedCheckbox.frame.insetBy(dx: -6, dy: -6).contains(point)
-    }
-
     @objc private func viewedToggled(_ sender: NSButton) {
         onViewedToggle?(sender.state == .on)
     }
@@ -54,8 +48,8 @@ final class DiffFileHeaderCellView: NSView {
         let text = NSMutableAttributedString()
 
         text.append(NSAttributedString(
-            string: isCollapsed ? "▸ " : "▾ ",
-            attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.secondaryLabelColor]
+            string: isCollapsed ? "▸  " : "▾  ",
+            attributes: [.font: NSFont.systemFont(ofSize: 14, weight: .medium), .foregroundColor: NSColor.secondaryLabelColor]
         ))
         text.append(NSAttributedString(
             string: "\(statusLetter(for: file.status)) ",

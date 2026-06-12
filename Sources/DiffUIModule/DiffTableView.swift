@@ -43,8 +43,12 @@ struct DiffTableView: NSViewRepresentable {
         tableView.dataSource = context.coordinator
         tableView.delegate = context.coordinator
 
-        let click = NSClickGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.tableClicked(_:)))
-        tableView.addGestureRecognizer(click)
+        // Native target/action instead of a gesture recognizer: recognizers
+        // swallow mouse events before embedded controls (the Viewed checkbox)
+        // ever see them, while the table action only fires for clicks no
+        // control consumed.
+        tableView.target = context.coordinator
+        tableView.action = #selector(Coordinator.tableClicked(_:))
 
         let scrollView = NSScrollView()
         scrollView.documentView = tableView
@@ -160,22 +164,14 @@ struct DiffTableView: NSViewRepresentable {
 
         // MARK: Clicks
 
-        @objc func tableClicked(_ recognizer: NSClickGestureRecognizer) {
-            guard let tableView = recognizer.view as? NSTableView else { return }
-
-            let location = recognizer.location(in: tableView)
-            let index = tableView.row(at: location)
-            guard index >= 0 else { return }
+        @objc func tableClicked(_ tableView: NSTableView) {
+            let index = tableView.clickedRow
+            guard index >= 0, index < rows.count else { return }
 
             switch rows[index] {
             case .line(_, let file, _, let line, _):
                 view?.onLineClick?(file, line)
             case .fileHeader(_, let file, _, _):
-                // Clicks on the "Viewed" checkbox belong to the checkbox.
-                if let cell = tableView.view(atColumn: 0, row: index, makeIfNecessary: false) as? DiffFileHeaderCellView,
-                   cell.isPointOnViewedControl(cell.convert(location, from: tableView)) {
-                    return
-                }
                 view?.onFileHeaderClick?(file.path)
             case .hunkHeader, .annotation:
                 break
