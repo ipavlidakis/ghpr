@@ -136,8 +136,10 @@ struct ReviewScreen: View {
             sections[anchor, default: []].append(AnyView(
                 ReviewThreadView(
                     thread: thread,
+                    pullRequestAuthor: model.data.pullRequest.user?.login,
                     onReply: { body in Task { await model.reply(to: thread, body: body) } },
-                    onResolve: { Task { await model.resolve(thread: thread) } }
+                    onResolve: { Task { await model.resolve(thread: thread) } },
+                    onReact: { comment, reaction in Task { await model.react(to: comment, with: reaction) } }
                 )
             ))
         }

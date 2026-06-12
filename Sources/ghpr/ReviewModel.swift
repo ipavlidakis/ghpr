@@ -80,6 +80,20 @@ final class ReviewModel {
         }
     }
 
+    func react(to comment: GithubReviewComment, with reaction: GithubReactionContent) async {
+        guard let commentId = comment.databaseId else {
+            errorMessage = "This comment cannot be reacted to."
+            return
+        }
+        await perform {
+            try await self.client.addReaction(
+                in: self.data.reference.repository,
+                commentId: commentId,
+                reaction: reaction
+            )
+        }
+    }
+
     // MARK: Plumbing
 
     /// Runs a write, surfaces any error, and refreshes the window on success.

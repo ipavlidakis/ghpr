@@ -33,9 +33,14 @@ enum GithubReviewThreadsQuery {
                             nodes {
                               id
                               databaseId
-                              author { login }
+                              author { login avatarUrl }
+                              authorAssociation
                               body
                               createdAt
+                              reactionGroups {
+                                content
+                                reactors { totalCount }
+                              }
                             }
                           }
                         }
@@ -68,7 +73,15 @@ enum GithubReviewThreadsQuery {
         struct PullRequest: Decodable { let reviewThreads: ThreadConnection }
         struct ThreadConnection: Decodable { let nodes: [ThreadNode] }
         struct CommentConnection: Decodable { let nodes: [CommentNode] }
-        struct Author: Decodable { let login: String }
+        struct Author: Decodable {
+            let login: String
+            let avatarUrl: String?
+        }
+        struct ReactionGroup: Decodable {
+            struct Reactors: Decodable { let totalCount: Int }
+            let content: String
+            let reactors: Reactors
+        }
 
         struct ThreadNode: Decodable {
             let id: String
@@ -98,16 +111,26 @@ enum GithubReviewThreadsQuery {
             let id: String
             let databaseId: Int?
             let author: Author?
+            let authorAssociation: String?
             let body: String
             let createdAt: Date
+            let reactionGroups: [ReactionGroup]?
 
             var model: GithubReviewComment {
                 GithubReviewComment(
                     id: id,
                     databaseId: databaseId,
                     authorLogin: author?.login,
+                    authorAvatarURL: author?.avatarUrl,
+                    authorAssociation: authorAssociation,
                     body: body,
-                    createdAt: createdAt
+                    createdAt: createdAt,
+                    reactions: (reactionGroups ?? []).compactMap { group in
+                        guard group.reactors.totalCount > 0, let content = GithubReactionContent(rawValue: group.content) else {
+                            return nil
+                        }
+                        return GithubReaction(content: content, count: group.reactors.totalCount)
+                    }
                 )
             }
         }

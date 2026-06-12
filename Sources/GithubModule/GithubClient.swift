@@ -126,6 +126,21 @@ package actor GithubClient {
         )
     }
 
+    /// Adds an emoji reaction to an inline comment.
+    package func addReaction(
+        in repository: GithubRepository,
+        commentId: Int,
+        reaction: GithubReactionContent
+    ) async throws {
+        struct Payload: Encodable {
+            let content: String
+        }
+        try await post(
+            path: "repos/\(repository.fullName)/pulls/comments/\(commentId)/reactions",
+            payload: Payload(content: reaction.restValue)
+        )
+    }
+
     /// Marks a review thread as resolved.
     package func resolveThread(id: String) async throws {
         // GraphQL variables are camelCase — no snake_case encoding here.

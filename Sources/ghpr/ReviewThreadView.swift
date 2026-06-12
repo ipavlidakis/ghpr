@@ -2,82 +2,103 @@ import Foundation
 import GithubModule
 import SwiftUI
 
-/// One inline review conversation, with reply and resolve actions.
+/// One inline review conversation, styled after GitHub's thread card:
+/// collapsible header with the line reference, comments with avatars and
+/// reactions, a reply field, and a resolve button.
 struct ReviewThreadView: View {
     let thread: GithubReviewThread
+    let pullRequestAuthor: String?
     var onReply: ((String) -> Void)?
     var onResolve: (() -> Void)?
+    var onReact: ((GithubReviewComment, GithubReactionContent) -> Void)?
 
+    @State private var isCollapsed = false
     @State private var replyText = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             header
-            comments
+            if !isCollapsed {
+                Divider()
+                content
+            }
+        }
+        .background(.background.opacity(0.6), in: .rect(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(.separator, lineWidth: 1)
+        )
+        .frame(maxWidth: 640, alignment: .leading)
+    }
+
+    // MARK: Header
+
+    private var header: some View {
+        Button {
+            isCollapsed.toggle()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Comment on line \(lineReference)")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                if isCollapsed {
+                    Text("· \(thread.comments.count) comment\(thread.comments.count == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer()
+                if thread.isResolved {
+                    Label("Resolved", systemImage: "checkmark.circle.fill")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.green)
+                }
+            }
+            .contentShape(.rect)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var lineReference: String {
+        let side = thread.diffSide == "LEFT" ? "L" : "R"
+        return thread.line.map { "\(side)\($0)" } ?? "?"
+    }
+
+    // MARK: Content
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(thread.comments, id: \.id) { comment in
+                ReviewCommentView(
+                    comment: comment,
+                    isPullRequestAuthor: comment.authorLogin != nil && comment.authorLogin == pullRequestAuthor,
+                    onReact: { reaction in onReact?(comment, reaction) }
+                )
+            }
             if let onReply {
                 replyField(onReply)
             }
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.4), in: .rect(cornerRadius: 6))
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(.separator, lineWidth: 1)
-        )
-    }
-
-    @ViewBuilder
-    private var header: some View {
-        HStack {
-            if thread.isResolved {
-                Label("Resolved", systemImage: "checkmark.circle.fill")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.green)
-            }
-            Spacer()
             if !thread.isResolved, let onResolve {
-                Button("Resolve", action: onResolve)
+                Button("Resolve comment", action: onResolve)
                     .controlSize(.small)
             }
         }
-    }
-
-    private var comments: some View {
-        ForEach(thread.comments, id: \.id) { comment in
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(comment.authorLogin ?? "ghost")
-                        .font(.caption.weight(.semibold))
-                    Text(comment.createdAt, format: .relative(presentation: .named))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Text(AttributedString(githubMarkdown: comment.body))
-                    .font(.callout)
-                    .textSelection(.enabled)
-            }
-        }
+        .padding(10)
     }
 
     private func replyField(_ onReply: @escaping (String) -> Void) -> some View {
-        HStack(spacing: 6) {
-            TextField("Reply…", text: $replyText)
-                .textFieldStyle(.roundedBorder)
-                .font(.callout)
-                .onSubmit { submitReply(onReply) }
-            Button("Send") {
-                submitReply(onReply)
+        TextField("Write a reply", text: $replyText)
+            .textFieldStyle(.roundedBorder)
+            .font(.callout)
+            .onSubmit {
+                let body = replyText.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !body.isEmpty else { return }
+                onReply(body)
+                replyText = ""
             }
-            .controlSize(.small)
-            .disabled(replyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-        }
-    }
-
-    private func submitReply(_ onReply: (String) -> Void) {
-        let body = replyText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !body.isEmpty else { return }
-        onReply(body)
-        replyText = ""
     }
 }
