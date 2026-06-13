@@ -18,3 +18,4 @@
 - Prefer `List` over `LazyVStack` in a `ScrollView` for long scrollable content: `List` recycles rows (NSTableView-backed on macOS), lazy stacks do not and drop frames.
 - For high-volume UI containers (diffs, timelines, large comment feeds, large file lists), prefer AppKit-backed virtualization (`NSTableView`/`NSOutlineView`) and host SwiftUI only inside rows/cards. SwiftUI `ScrollView`, `LazyVStack`, and `Grid` are acceptable for small bounded content, not unbounded PR-scale containers.
 - Every milestone must build (`swift build`) and pass its tests (`swift test`) before it is committed.
+- All UI related code lives in the `UIModule` target.
