@@ -52,12 +52,7 @@ package struct WindowRunner {
             title: title(for: content),
             openPullRequestCount: openPullRequestCount(for: content),
             dashboardFilterState: dashboardFilterState,
-            pullRequestNumber: pullRequestNumber(for: content),
-            pullRequestConversationCount: pullRequestConversationCount(for: content),
-            pullRequestCommitCount: pullRequestCommitCount(for: content),
-            pullRequestCheckCount: pullRequestCheckCount(for: content),
-            pullRequestChangedFileCount: pullRequestChangedFileCount(for: content),
-            pullRequestTabState: pullRequestTabState
+            pullRequestNumber: pullRequestNumber(for: content)
         )
         let frame = NSRect(origin: .zero, size: size)
         let hostingController = NSHostingController(
@@ -122,10 +117,11 @@ package struct WindowRunner {
                     }
                 }
             )
-        case .pullRequest(let pullRequest, let repository, _):
+        case .pullRequest(let pullRequest, let repository, let checkRunCount):
             PullRequestView(
                 pullRequest: pullRequest,
                 repository: repository,
+                checkRunCount: checkRunCount,
                 tabState: pullRequestTabState ?? PullRequestTabState()
             )
         }
@@ -178,39 +174,4 @@ package struct WindowRunner {
         }
     }
 
-    private func pullRequestConversationCount(for content: WindowContent) -> Int? {
-        switch content {
-        case .dashboard:
-            nil
-        case .pullRequest(let pullRequest, _, _):
-            (pullRequest.comments ?? 0) + (pullRequest.reviewComments ?? 0)
-        }
-    }
-
-    private func pullRequestCommitCount(for content: WindowContent) -> Int? {
-        switch content {
-        case .dashboard:
-            nil
-        case .pullRequest(let pullRequest, _, _):
-            pullRequest.commits ?? 0
-        }
-    }
-
-    private func pullRequestCheckCount(for content: WindowContent) -> Int? {
-        switch content {
-        case .dashboard:
-            nil
-        case .pullRequest(_, _, let checkRunCount):
-            checkRunCount
-        }
-    }
-
-    private func pullRequestChangedFileCount(for content: WindowContent) -> Int? {
-        switch content {
-        case .dashboard:
-            nil
-        case .pullRequest(let pullRequest, _, _):
-            pullRequest.changedFiles ?? 0
-        }
-    }
 }
