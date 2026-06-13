@@ -7,7 +7,7 @@ import Foundation
 enum MarkdownBlock: Equatable {
     case heading(level: Int, text: String)
     case paragraph(String)
-    case code(String)
+    case code(language: String?, text: String)
     case bullets([String])
     case quote(String)
     case rule
@@ -28,6 +28,7 @@ enum MarkdownBlock: Equatable {
         var paragraph: [String] = []
         var bullets: [String] = []
         var codeLines: [String] = []
+        var codeLanguage: String?
         var inCodeFence = false
         var inHTMLComment = false
 
@@ -55,11 +56,14 @@ enum MarkdownBlock: Equatable {
 
             if trimmed.hasPrefix("```") {
                 if inCodeFence {
-                    blocks.append(.code(codeLines.joined(separator: "\n")))
+                    blocks.append(.code(language: codeLanguage, text: codeLines.joined(separator: "\n")))
                     codeLines = []
+                    codeLanguage = nil
                 } else {
                     flushParagraph()
                     flushBullets()
+                    let language = String(trimmed.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                    codeLanguage = language.isEmpty ? nil : language.lowercased()
                 }
                 inCodeFence.toggle()
                 continue
@@ -105,6 +109,19 @@ enum MarkdownBlock: Equatable {
                 continue
             }
 
+            if trimmed.lowercased().hasPrefix("<table") {
+                flushParagraph()
+                flushBullets()
+                var end = current
+                while end < lines.count {
+                    end += 1
+                    if lines[end - 1].lowercased().contains("</table>") { break }
+                }
+                blocks.append(htmlTableBlock(Array(lines[current..<end])))
+                index = end
+                continue
+            }
+
             if trimmed.hasPrefix("|"), index < lines.count, isTableSeparator(lines[index]) {
                 flushParagraph()
                 flushBullets()
@@ -144,12 +161,17 @@ enum MarkdownBlock: Equatable {
                 // Continuation of the previous list item.
                 bullets[bullets.count - 1] += " " + trimmed
             } else {
-                paragraph.append(line)
+                if line.contains("<") {
+                    line = plainHTMLText(line)
+                }
+                if !line.isEmpty {
+                    paragraph.append(line)
+                }
             }
         }
 
         if inCodeFence, !codeLines.isEmpty {
-            blocks.append(.code(codeLines.joined(separator: "\n")))
+            blocks.append(.code(language: codeLanguage, text: codeLines.joined(separator: "\n")))
         }
         flushParagraph()
         flushBullets()
@@ -184,6 +206,21 @@ enum MarkdownBlock: Equatable {
 
     // MARK: Tables
 
+    private static func htmlTableBlock(_ segment: [String]) -> MarkdownBlock {
+        let table = segment.joined(separator: "\n")
+        let rows = regexMatches(#"(?is)<tr[^>]*>(.*?)</tr>"#, in: table)
+            .map { rowHTML in
+                regexMatches(#"(?is)<t[dh][^>]*>(.*?)</t[dh]>"#, in: rowHTML)
+                    .map(plainHTMLText)
+            }
+            .filter { !$0.isEmpty }
+
+        guard let header = rows.first else {
+            return .paragraph(plainHTMLText(table))
+        }
+        return .table(header: header, rows: Array(rows.dropFirst()))
+    }
+
     /// `| --- | :--: |` and the compact `|-|-|` form.
     private static func isTableSeparator(_ line: String) -> Bool {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
@@ -196,6 +233,31 @@ enum MarkdownBlock: Equatable {
         if content.hasPrefix("|") { content.removeFirst() }
         if content.hasSuffix("|") { content.removeLast() }
         return content.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+    }
+
+    private static func regexMatches(_ pattern: String, in text: String) -> [String] {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        return regex.matches(in: text, range: range).compactMap { match in
+            guard match.numberOfRanges > 1, let range = Range(match.range(at: 1), in: text) else { return nil }
+            return String(text[range])
+        }
+    }
+
+    private static func plainHTMLText(_ html: String) -> String {
+        html
+            .replacingOccurrences(of: #"(?i)<br\s*/?>"#, with: "\n", options: .regularExpression)
+            .replacingOccurrences(of: #"(?is)<[^>]+>"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func headingLevel(of line: String) -> (level: Int, text: String)? {

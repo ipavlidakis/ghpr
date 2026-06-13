@@ -117,9 +117,8 @@ struct ReviewScreen: View {
 
             filesSplitView
                 .tabItem {
-                    Label(ReviewTab.files.title, systemImage: ReviewTab.files.systemImage)
+                    Label(filesTabTitle, systemImage: ReviewTab.files.systemImage)
                 }
-                .badge(model.data.files.count)
                 .tag(ReviewTab.files)
                 .keyboardShortcut("4", modifiers: .command)
         }
@@ -237,6 +236,14 @@ struct ReviewScreen: View {
     /// Comment cards in the timeline, like GitHub's conversation counter.
     private var conversationCount: Int {
         model.data.timeline.count { if case .comment = $0 { true } else { false } }
+    }
+
+    private var filesBadgeText: String {
+        model.data.files.count >= 100 ? "99+" : "\(model.data.files.count)"
+    }
+
+    private var filesTabTitle: String {
+        "\(ReviewTab.files.title) · \(filesBadgeText)"
     }
 
     private var toolbarTitle: some View {

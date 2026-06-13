@@ -26,13 +26,8 @@ struct MarkdownBlocksView: View {
             Text(AttributedString(githubMarkdown: text))
                 .font(.callout)
                 .textSelection(.enabled)
-        case .code(let code):
-            Text(verbatim: code)
-                .font(.system(size: 12, design: .monospaced))
-                .textSelection(.enabled)
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 6))
+        case .code(let language, let code):
+            codeView(language: language, code: code)
         case .bullets(let items):
             VStack(alignment: .leading, spacing: 3) {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
@@ -91,6 +86,45 @@ struct MarkdownBlocksView: View {
         }
         .padding(10)
         .background(.quaternary.opacity(0.3), in: .rect(cornerRadius: 6))
+    }
+
+    @ViewBuilder
+    private func codeView(language: String?, code: String) -> some View {
+        if language == "diff" || language == "patch" {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(code.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
+                    Text(verbatim: line)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(diffForeground(for: line))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 1)
+                        .background(diffBackground(for: line))
+                }
+            }
+            .textSelection(.enabled)
+            .padding(.vertical, 8)
+            .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 6))
+        } else {
+            Text(verbatim: code)
+                .font(.system(size: 12, design: .monospaced))
+                .textSelection(.enabled)
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 6))
+        }
+    }
+
+    private func diffForeground(for line: String) -> Color {
+        if line.hasPrefix("+"), !line.hasPrefix("+++") { return .green }
+        if line.hasPrefix("-"), !line.hasPrefix("---") { return .red }
+        return .primary
+    }
+
+    private func diffBackground(for line: String) -> Color {
+        if line.hasPrefix("+"), !line.hasPrefix("+++") { return .green.opacity(0.10) }
+        if line.hasPrefix("-"), !line.hasPrefix("---") { return .red.opacity(0.10) }
+        return .clear
     }
 
     private func headingFont(_ level: Int) -> Font {
