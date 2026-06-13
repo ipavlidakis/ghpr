@@ -23,7 +23,11 @@ let package = Package(
         ),
         .target(name: "AuthenticationModule", path: "Sources/Modules/AuthenticationModule"),
         .target(name: "GithubModule", path: "Sources/Modules/GithubModule"),
-        .target(name: "UIModule", path: "Sources/Modules/UIModule"),
+        .target(
+            name: "UIModule",
+            dependencies: ["GithubModule"],
+            path: "Sources/Modules/UIModule"
+        ),
         .testTarget(
             name: "AuthenticationModuleTests",
             dependencies: ["AuthenticationModule"],

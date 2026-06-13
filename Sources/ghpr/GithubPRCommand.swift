@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 
 /// The `ghpr` entry point: routes to subcommands, defaulting to `open` so
-/// both `ghpr <pr-url>` and bare `ghpr` print a pull request summary.
+/// both `ghpr <pr-url>` and bare `ghpr` open a SwiftUI window.
 ///
 /// Deliberately a synchronous `ParsableCommand` so CLI startup stays simple.
 @main
