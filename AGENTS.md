@@ -19,6 +19,7 @@
 - Prefer `List` over `LazyVStack` in a `ScrollView` for long scrollable content: `List` recycles rows (NSTableView-backed on macOS), lazy stacks do not and drop frames.
 - For high-volume UI containers (diffs, timelines, large comment feeds, large file lists), prefer AppKit-backed virtualization (`NSTableView`/`NSOutlineView`) and host SwiftUI only inside rows/cards. SwiftUI `ScrollView`, `LazyVStack`, and `Grid` are acceptable for small bounded content, not unbounded PR-scale containers.
 - Prefer intrinsic and self-sizing layout over hardcoded dimensions. Use fixed sizes only when they are required for correctness, platform behavior, or measurable performance.
+- For compact macOS UI spacing, prefer the uniform `xsmall / small / medium / large` layout scale backed by 0 / 4 / 8 / 16 point values. Keep these as instance-owned layout values, not scattered literals and not `static` globals.
 - Every milestone must build (`swift build`) and pass its tests (`swift test`) before it is committed.
 - All UI related code lives in the `UIModule` target.
 

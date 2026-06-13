@@ -19,7 +19,7 @@ struct OpenCommand: ParsableCommand {
     /// Where the command ends up once the network work is done.
     private enum Destination: Sendable {
         case review(ReviewData)
-        case dash([GithubPullRequest], GithubRepository)
+        case dash([GithubPullRequest], GithubRepository, GithubUser)
     }
 
     func run() throws {
@@ -57,9 +57,10 @@ struct OpenCommand: ParsableCommand {
                 return .review(try await ReviewData.load(with: client, reference: reference))
             }
 
-            let openPullRequests = try await client.openPullRequests(in: repository)
+            async let openPullRequests = client.openPullRequests(in: repository)
+            async let currentUser = client.authenticatedUser()
             print("No open pull request for branch '\(branch)' in \(repository.fullName).")
-            return .dash(openPullRequests, repository)
+            return .dash(try await openPullRequests, repository, try await currentUser)
         }
 
         MainActor.assumeIsolated {
@@ -71,8 +72,8 @@ struct OpenCommand: ParsableCommand {
         switch destination {
         case .review(let data):
             .pullRequest(data.pullRequest, data.reference.repository)
-        case .dash(let pullRequests, let repository):
-            .dashboard(pullRequests, repository)
+        case .dash(let pullRequests, let repository, let currentUser):
+            .dashboard(pullRequests, repository, currentUser)
         }
     }
 }

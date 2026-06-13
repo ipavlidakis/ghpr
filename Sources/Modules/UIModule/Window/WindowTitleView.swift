@@ -6,6 +6,8 @@ struct WindowTitleView: View {
     /// Repository title displayed in the toolbar.
     let title: String
 
+    private let spacing = LayoutSpacing()
+
     /// Creates a title pill.
     init(title: String) {
         self.title = title
@@ -18,8 +20,8 @@ struct WindowTitleView: View {
             .fontWeight(.medium)
             .lineLimit(1)
             .truncationMode(.middle)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, spacing.large)
+            .padding(.vertical, spacing.small)
             .glassEffect(.regular, in: .capsule)
     }
 }
