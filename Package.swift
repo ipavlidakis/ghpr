@@ -8,7 +8,7 @@ let package = Package(
         .executable(name: "ghpr", targets: ["ghpr"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.5.0"),
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.5.0")
     ],
     targets: [
         .executableTarget(
@@ -16,25 +16,29 @@ let package = Package(
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 "AuthenticationModule",
-                "GithubModule"
+                "GithubModule",
+                "UIModule",
             ],
             resources: [.copy("Resources/demo.diff")]
         ),
-        .target(name: "AuthenticationModule"),
-        .target(name: "GithubModule"),
+        .target(name: "AuthenticationModule", path: "Sources/Modules/AuthenticationModule"),
+        .target(name: "GithubModule", path: "Sources/Modules/GithubModule"),
+        .target(name: "UIModule", path: "Sources/Modules/UIModule"),
         .testTarget(
             name: "AuthenticationModuleTests",
-            dependencies: ["AuthenticationModule"]
+            dependencies: ["AuthenticationModule"],
+            path: "Tests/Modules/AuthenticationModuleTests"
         ),
         .testTarget(
             name: "GithubModuleTests",
             dependencies: ["GithubModule"],
+            path: "Tests/Modules/GithubModuleTests",
             resources: [.copy("Fixtures")]
         ),
         .testTarget(
             name: "ghprTests",
             dependencies: ["ghpr", "GithubModule"],
             resources: [.copy("Fixtures")]
-        )
+        ),
     ]
 )
