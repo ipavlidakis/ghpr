@@ -1,8 +1,13 @@
 import Foundation
+import GithubModule
 import SwiftUI
 
 /// Pull request section tabs.
 package struct PullRequestTabsView: View {
+    /// Pull request shown inside each section.
+    package let pullRequest: GithubPullRequest
+    /// Repository that owns the pull request.
+    package let repository: GithubRepository
     /// Shared tab selection state.
     package let tabState: PullRequestTabState
     /// Conversation comment count.
@@ -16,12 +21,16 @@ package struct PullRequestTabsView: View {
 
     /// Creates a pull request tab selector.
     package init(
+        pullRequest: GithubPullRequest,
+        repository: GithubRepository,
         tabState: PullRequestTabState,
         conversationCount: Int,
         commitCount: Int,
         checkCount: Int,
         changedFileCount: Int
     ) {
+        self.pullRequest = pullRequest
+        self.repository = repository
         self.tabState = tabState
         self.conversationCount = conversationCount
         self.commitCount = commitCount
@@ -36,11 +45,18 @@ package struct PullRequestTabsView: View {
         TabView(selection: $tabState.selectedTab) {
             ForEach(PullRequestTab.allCases) { tab in
                 Tab(value: tab) {
-                    Color.blue
+                    tabContent
                 } label: {
                     Text(label(for: tab))
                 }
             }
+        }
+    }
+
+    private var tabContent: some View {
+        VStack(spacing: .zero) {
+            PullRequestHeaderView(pullRequest: pullRequest, repository: repository)
+            Color.blue
         }
     }
 

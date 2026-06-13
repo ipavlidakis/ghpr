@@ -29,6 +29,8 @@ package struct PullRequestView: View {
     /// Pull request content split into review sections.
     package var body: some View {
         PullRequestTabsView(
+            pullRequest: pullRequest,
+            repository: repository,
             tabState: tabState,
             conversationCount: conversationCount,
             commitCount: commitCount,

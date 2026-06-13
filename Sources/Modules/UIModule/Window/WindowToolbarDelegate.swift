@@ -4,26 +4,22 @@ import SwiftUI
 
 /// Builds the native window toolbar used as the title bar surface.
 final class WindowToolbarDelegate: NSObject, NSToolbarDelegate {
-    private let title: String
+    private let title: String?
     private let openPullRequestCount: Int?
     private let dashboardFilterState: DashboardFilterState?
-    private let pullRequestNumber: Int?
     private let titleIdentifier = NSToolbarItem.Identifier("window.title")
     private let dashboardSummaryIdentifier = NSToolbarItem.Identifier("dashboard.summary")
     private let dashboardAuthorFilterIdentifier = NSToolbarItem.Identifier("dashboard.authorFilter")
-    private let pullRequestNumberIdentifier = NSToolbarItem.Identifier("pullRequest.number")
 
-    /// Creates a toolbar delegate for a window title.
+    /// Creates a toolbar delegate for optional window title content.
     init(
-        title: String,
+        title: String?,
         openPullRequestCount: Int? = nil,
-        dashboardFilterState: DashboardFilterState? = nil,
-        pullRequestNumber: Int? = nil
+        dashboardFilterState: DashboardFilterState? = nil
     ) {
         self.title = title
         self.openPullRequestCount = openPullRequestCount
         self.dashboardFilterState = dashboardFilterState
-        self.pullRequestNumber = pullRequestNumber
     }
 
     /// Creates the toolbar that hosts the window title.
@@ -39,11 +35,11 @@ final class WindowToolbarDelegate: NSObject, NSToolbarDelegate {
 
     @MainActor
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        if pullRequestNumber != nil {
-            return [pullRequestNumberIdentifier, .flexibleSpace]
-        }
+        var identifiers: [NSToolbarItem.Identifier] = []
 
-        var identifiers = [titleIdentifier]
+        if title != nil {
+            identifiers.append(titleIdentifier)
+        }
 
         if openPullRequestCount != nil {
             identifiers.append(dashboardSummaryIdentifier)
@@ -64,7 +60,6 @@ final class WindowToolbarDelegate: NSObject, NSToolbarDelegate {
             titleIdentifier,
             dashboardSummaryIdentifier,
             dashboardAuthorFilterIdentifier,
-            pullRequestNumberIdentifier,
             .flexibleSpace,
         ]
     }
@@ -82,15 +77,17 @@ final class WindowToolbarDelegate: NSObject, NSToolbarDelegate {
             return dashboardSummaryItem(itemIdentifier: itemIdentifier)
         case dashboardAuthorFilterIdentifier:
             return dashboardAuthorFilterItem(itemIdentifier: itemIdentifier)
-        case pullRequestNumberIdentifier:
-            return pullRequestNumberItem(itemIdentifier: itemIdentifier)
         default:
             return nil
         }
     }
 
     @MainActor
-    private func titleItem(itemIdentifier: NSToolbarItem.Identifier) -> NSToolbarItem {
+    private func titleItem(itemIdentifier: NSToolbarItem.Identifier) -> NSToolbarItem? {
+        guard let title else {
+            return nil
+        }
+
         let titleView = NSHostingView(rootView: WindowTitleView(title: title))
 
         let item = NSToolbarItem(itemIdentifier: itemIdentifier)
@@ -130,21 +127,6 @@ final class WindowToolbarDelegate: NSObject, NSToolbarDelegate {
 
         let item = NSToolbarItem(itemIdentifier: itemIdentifier)
         item.view = authorFilterView
-        item.isBordered = false
-        item.style = .plain
-        return item
-    }
-
-    @MainActor
-    private func pullRequestNumberItem(itemIdentifier: NSToolbarItem.Identifier) -> NSToolbarItem? {
-        guard let pullRequestNumber else {
-            return nil
-        }
-
-        let numberView = NSHostingView(rootView: PullRequestNumberView(number: pullRequestNumber))
-
-        let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-        item.view = numberView
         item.isBordered = false
         item.style = .plain
         return item

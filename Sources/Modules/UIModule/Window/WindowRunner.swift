@@ -49,10 +49,9 @@ package struct WindowRunner {
         let dashboardFilterState = dashboardFilterState(for: content)
         let pullRequestTabState = pullRequestTabState(for: content)
         let toolbarDelegate = WindowToolbarDelegate(
-            title: title(for: content),
+            title: toolbarTitle(for: content),
             openPullRequestCount: openPullRequestCount(for: content),
-            dashboardFilterState: dashboardFilterState,
-            pullRequestNumber: pullRequestNumber(for: content)
+            dashboardFilterState: dashboardFilterState
         )
         let frame = NSRect(origin: .zero, size: size)
         let hostingController = NSHostingController(
@@ -136,6 +135,15 @@ package struct WindowRunner {
         }
     }
 
+    private func toolbarTitle(for content: WindowContent) -> String? {
+        switch content {
+        case .dashboard(_, let repository, _):
+            repository.fullName
+        case .pullRequest:
+            nil
+        }
+    }
+
     @MainActor
     private func dashboardFilterState(for content: WindowContent) -> DashboardFilterState? {
         switch content {
@@ -162,15 +170,6 @@ package struct WindowRunner {
             pullRequests.count
         case .pullRequest:
             nil
-        }
-    }
-
-    private func pullRequestNumber(for content: WindowContent) -> Int? {
-        switch content {
-        case .dashboard:
-            nil
-        case .pullRequest(let pullRequest, _, _):
-            pullRequest.number
         }
     }
 
