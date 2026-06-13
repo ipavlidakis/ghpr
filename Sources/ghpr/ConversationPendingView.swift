@@ -15,8 +15,7 @@ struct ConversationPendingView: View {
             MarkdownView(text: comment.body)
                 .padding(10)
         }
-        .background(.orange.opacity(0.05), in: .rect(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.orange.opacity(0.4), lineWidth: 1))
+        .modifier(ReviewSurface(fill: AnyShapeStyle(.orange.opacity(0.06)), border: AnyShapeStyle(.orange.opacity(0.35))))
     }
 
     private var header: some View {

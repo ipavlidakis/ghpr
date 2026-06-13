@@ -5,6 +5,8 @@ import Foundation
 /// collapse chevron, status letter, path, change counts, and the
 /// GitHub-style "Viewed" checkbox that collapses the file when checked.
 final class DiffFileHeaderCellView: NSView {
+    private let topSeparator = NSBox()
+    private let bottomSeparator = NSBox()
     private let textField = NSTextField(labelWithString: "")
     private let copyButton = NSButton()
     private let expandButton = NSButton()
@@ -22,6 +24,9 @@ final class DiffFileHeaderCellView: NSView {
 
     override init(frame: NSRect) {
         super.init(frame: frame)
+        configureSeparator(topSeparator)
+        configureSeparator(bottomSeparator)
+
         // Single line via maximumNumberOfLines, not usesSingleLineMode —
         // the latter silently replaces middle truncation with tail clipping.
         textField.lineBreakMode = .byTruncatingMiddle
@@ -43,7 +48,15 @@ final class DiffFileHeaderCellView: NSView {
         addSubview(viewedCheckbox)
 
         NSLayoutConstraint.activate([
-            textField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            topSeparator.leadingAnchor.constraint(equalTo: leadingAnchor),
+            topSeparator.trailingAnchor.constraint(equalTo: trailingAnchor),
+            topSeparator.topAnchor.constraint(equalTo: topAnchor),
+            topSeparator.heightAnchor.constraint(equalToConstant: 1),
+            bottomSeparator.leadingAnchor.constraint(equalTo: leadingAnchor),
+            bottomSeparator.trailingAnchor.constraint(equalTo: trailingAnchor),
+            bottomSeparator.bottomAnchor.constraint(equalTo: bottomAnchor),
+            bottomSeparator.heightAnchor.constraint(equalToConstant: 1),
+            textField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             textField.centerYAnchor.constraint(equalTo: centerYAnchor),
             copyButton.leadingAnchor.constraint(equalTo: textField.trailingAnchor, constant: 8),
             copyButton.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -72,6 +85,12 @@ final class DiffFileHeaderCellView: NSView {
         button.action = action
         button.translatesAutoresizingMaskIntoConstraints = false
         addSubview(button)
+    }
+
+    private func configureSeparator(_ separator: NSBox) {
+        separator.boxType = .separator
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(separator)
     }
 
     @objc private func viewedToggled(_ sender: NSButton) {
@@ -122,7 +141,7 @@ final class DiffFileHeaderCellView: NSView {
         ))
         text.append(NSAttributedString(
             string: title(for: file),
-            attributes: [.font: NSFont.systemFont(ofSize: 12, weight: .semibold), .foregroundColor: NSColor.labelColor]
+            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .semibold), .foregroundColor: NSColor.labelColor]
         ))
         if file.additions > 0 {
             text.append(NSAttributedString(

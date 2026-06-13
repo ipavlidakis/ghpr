@@ -10,8 +10,9 @@ import Foundation
 final class WindowFrameGuard {
     func protect(_ window: NSWindow, frame: NSRect) {
         Task { @MainActor [weak window] in
+            let collapseWidth = max(600, min(frame.width * 0.65, 840))
             while let window {
-                if !window.inLiveResize, window.frame.width < 600 {
+                if !window.inLiveResize, window.frame.width < collapseWidth {
                     window.setFrame(frame, display: true)
                 }
                 try? await Task.sleep(for: .milliseconds(500))

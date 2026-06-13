@@ -7,41 +7,58 @@ struct ChecksListView: View {
     let checkRuns: [GithubCheckRun]
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(checkRuns.enumerated()), id: \.offset) { index, run in
+        Group {
+            if checkRuns.isEmpty {
+                ContentUnavailableView(
+                    "No checks",
+                    systemImage: "checkmark.seal",
+                    description: Text("This pull request has no reported check runs.")
+                )
+            } else {
+                List(Array(checkRuns.enumerated()), id: \.offset) { _, run in
                     row(for: run)
-                    if index < checkRuns.count - 1 {
-                        Divider()
-                    }
                 }
+                .listStyle(.inset)
+                .frame(maxWidth: 760)
             }
-            .background(.background.opacity(0.6), in: .rect(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(.separator, lineWidth: 1)
-            )
-            .padding(20)
-            .frame(maxWidth: 760, alignment: .leading)
-            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity)
+        .padding(20)
     }
 
     private func row(for run: GithubCheckRun) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             Image(systemName: ChecksListView.symbol(for: run))
                 .foregroundStyle(ChecksListView.color(for: run))
-            Text(run.name)
-                .font(.callout)
-                .lineLimit(1)
-                .truncationMode(.middle)
+                .frame(width: 18)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(run.name)
+                    .font(.callout.weight(.medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(statusText(for: run))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Spacer()
-            Text(run.conclusion ?? run.status)
-                .font(.caption)
+            if let htmlUrl = run.htmlUrl {
+                Button {
+                    open(htmlUrl)
+                } label: {
+                    Image(systemName: "arrow.up.forward.square")
+                }
+                .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
+                .help("Open check")
+            }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.vertical, 5)
+    }
+
+    private func statusText(for run: GithubCheckRun) -> String {
+        (run.conclusion ?? run.status)
+            .replacingOccurrences(of: "_", with: " ")
+            .capitalized
     }
 
     static func symbol(for run: GithubCheckRun) -> String {

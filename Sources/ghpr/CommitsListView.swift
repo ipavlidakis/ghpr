@@ -7,28 +7,31 @@ struct CommitsListView: View {
     let commits: [GithubCommit]
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(commits.enumerated()), id: \.element.sha) { index, commit in
+        Group {
+            if commits.isEmpty {
+                ContentUnavailableView(
+                    "No commits",
+                    systemImage: "arrow.triangle.merge",
+                    description: Text("No commits were returned for this pull request.")
+                )
+            } else {
+                List(commits, id: \.sha) { commit in
                     row(for: commit)
-                    if index < commits.count - 1 {
-                        Divider()
-                    }
                 }
+                .listStyle(.inset)
+                .frame(maxWidth: 760)
             }
-            .background(.background.opacity(0.6), in: .rect(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(.separator, lineWidth: 1)
-            )
-            .padding(20)
-            .frame(maxWidth: 760, alignment: .leading)
-            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity)
+        .padding(20)
     }
 
     private func row(for commit: GithubCommit) -> some View {
         HStack(spacing: 10) {
+            Image(systemName: "circle.fill")
+                .font(.system(size: 7))
+                .foregroundStyle(.secondary)
+                .frame(width: 18)
             VStack(alignment: .leading, spacing: 2) {
                 Text(commit.summary)
                     .font(.callout.weight(.medium))
@@ -47,10 +50,12 @@ struct CommitsListView: View {
             }
             Spacer()
             Text(commit.shortSha)
-                .font(.callout.monospaced())
+                .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.background.tertiary, in: .rect(cornerRadius: 5))
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.vertical, 5)
     }
 }

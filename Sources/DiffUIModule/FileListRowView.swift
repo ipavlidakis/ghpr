@@ -15,8 +15,6 @@ struct FileListRowView: View {
                 .font(.callout)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            Spacer(minLength: 4)
-            ChangeCountsLabel(additions: item.additions, deletions: item.deletions)
         }
     }
 }

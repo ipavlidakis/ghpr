@@ -7,6 +7,14 @@ struct PendingCommentView: View {
     let onDelete: () -> Void
 
     var body: some View {
+        HStack(alignment: .top, spacing: 0) {
+            content
+                .frame(maxWidth: 640, alignment: .leading)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Label("Pending", systemImage: "clock")
@@ -24,11 +32,6 @@ struct PendingCommentView: View {
                 .font(.callout)
         }
         .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.orange.opacity(0.08), in: .rect(cornerRadius: 6))
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(.orange.opacity(0.4), lineWidth: 1)
-        )
+        .modifier(ReviewSurface(fill: AnyShapeStyle(.orange.opacity(0.06)), border: AnyShapeStyle(.orange.opacity(0.35))))
     }
 }

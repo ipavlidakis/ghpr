@@ -47,8 +47,7 @@ struct ConversationThreadCard: View {
                 resolveBar
             }
         }
-        .background(.background.opacity(0.6), in: .rect(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.separator, lineWidth: 1))
+        .modifier(ReviewSurface())
     }
 
     private var header: some View {

@@ -13,7 +13,7 @@ enum AppBootstrap {
     private static var cascadeOffset: CGFloat = 0
 
     /// Boots the app with its first window and blocks in the run loop.
-    static func run(title: String, size: NSSize = NSSize(width: 1280, height: 840), content: some View) {
+    static func run(title: String, size: NSSize = NSSize(width: 1440, height: 920), content: some View) {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         app.delegate = delegate
@@ -27,7 +27,10 @@ enum AppBootstrap {
 
     /// Opens an additional window in the running app (dash → review).
     /// The process keeps running until every window is closed.
-    static func openWindow(title: String, size: NSSize = NSSize(width: 1280, height: 840), content: some View) {
+    static func openWindow(title: String, size: NSSize = NSSize(width: 1440, height: 920), content: some View) {
+        let hostingController = NSHostingController(rootView: content)
+        hostingController.sizingOptions = []
+
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -36,30 +39,8 @@ enum AppBootstrap {
         )
         window.title = title
         window.isReleasedWhenClosed = false
-
-        let hostingView = NSHostingView(rootView: content)
-        hostingView.sizingOptions = []
-
-        // Sandbox the hosting view inside a plain container pinned at
-        // sub-required priority: SwiftUI's internal sizing constraints then
-        // break against the container instead of resizing the window
-        // (otherwise NavigationSplitView collapses the frame to ~120pt).
-        let container = NSView()
-        hostingView.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(hostingView)
-        let edges = [
-            hostingView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            hostingView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            hostingView.topAnchor.constraint(equalTo: container.topAnchor),
-            hostingView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
-        ]
-        for constraint in edges {
-            constraint.priority = NSLayoutConstraint.Priority(999)
-        }
-        NSLayoutConstraint.activate(edges)
-
-        window.contentView = container
-        window.minSize = NSSize(width: 700, height: 460)
+        window.contentViewController = hostingController
+        window.minSize = NSSize(width: min(size.width, 960), height: min(size.height, 600))
         window.makeKeyAndOrderFront(nil)
 
         let frame = centeredFrame(size: size).offsetBy(dx: cascadeOffset, dy: -cascadeOffset)
@@ -85,21 +66,45 @@ enum AppBootstrap {
     /// actions text fields expect.
     private static func mainMenu() -> NSMenu {
         let menu = NSMenu()
+        let app = NSApplication.shared
+        let appName = ProcessInfo.processInfo.processName
 
-        let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "Quit ghpr", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let appMenu = NSMenu(title: appName)
+        appMenu.addItem(withTitle: "About \(appName)", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        let servicesMenu = NSMenu(title: "Services")
+        let servicesItem = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
+        servicesItem.submenu = servicesMenu
+        appMenu.addItem(servicesItem)
+        app.servicesMenu = servicesMenu
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Hide \(appName)", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        let hideOthers = appMenu.addItem(withTitle: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
+        hideOthers.keyEquivalentModifierMask = [.command, .option]
+        appMenu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Quit \(appName)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(submenu: appMenu)
 
         let editMenu = NSMenu(title: "Edit")
+        editMenu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+        editMenu.addItem(.separator())
         editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
         editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
         editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        editMenu.addItem(withTitle: "Delete", action: #selector(NSText.delete(_:)), keyEquivalent: "\u{8}")
+        editMenu.addItem(.separator())
         editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         menu.addItem(submenu: editMenu)
 
         let windowMenu = NSMenu(title: "Window")
         windowMenu.addItem(withTitle: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
         windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+        windowMenu.addItem(withTitle: "Zoom", action: #selector(NSWindow.performZoom(_:)), keyEquivalent: "")
+        windowMenu.addItem(.separator())
+        windowMenu.addItem(withTitle: "Bring All to Front", action: #selector(NSApplication.arrangeInFront(_:)), keyEquivalent: "")
+        app.windowsMenu = windowMenu
         menu.addItem(submenu: windowMenu)
 
         return menu

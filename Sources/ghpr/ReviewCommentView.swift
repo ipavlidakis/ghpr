@@ -74,7 +74,7 @@ struct ReviewCommentView: View {
                     .font(.caption)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
-                    .background(.quaternary.opacity(0.6), in: .capsule)
+                    .background(.background.tertiary, in: .capsule)
             }
             // A Menu misfires inside hosted table cells; a popover is reliable.
             Button {

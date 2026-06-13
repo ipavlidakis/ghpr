@@ -34,37 +34,37 @@ struct ConversationEventRowView: View {
     private var text: Text {
         switch event.kind {
         case .labeled:
-            Text(actor).bold() + Text(" added the").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("added the").foregroundStyle(.secondary))")
         case .unlabeled:
-            Text(actor).bold() + Text(" removed the").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("removed the").foregroundStyle(.secondary))")
         case .assigned where event.assigneeLogin == event.actorLogin:
-            Text(actor).bold() + Text(" self-assigned this").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("self-assigned this").foregroundStyle(.secondary))")
         case .assigned:
-            Text(actor).bold() + Text(" assigned ").foregroundStyle(.secondary) + Text(event.assigneeLogin ?? "ghost").bold()
+            Text("\(Text(actor).bold()) \(Text("assigned").foregroundStyle(.secondary)) \(Text(event.assigneeLogin ?? "ghost").bold())")
         case .unassigned:
-            Text(actor).bold() + Text(" unassigned ").foregroundStyle(.secondary) + Text(event.assigneeLogin ?? "ghost").bold()
+            Text("\(Text(actor).bold()) \(Text("unassigned").foregroundStyle(.secondary)) \(Text(event.assigneeLogin ?? "ghost").bold())")
         case .reviewRequested:
-            Text(actor).bold() + Text(" requested a review from ").foregroundStyle(.secondary) + Text(event.requestedReviewerName ?? "ghost").bold()
+            Text("\(Text(actor).bold()) \(Text("requested a review from").foregroundStyle(.secondary)) \(Text(event.requestedReviewerName ?? "ghost").bold())")
         case .reviewRequestRemoved:
-            Text(actor).bold() + Text(" removed the review request from ").foregroundStyle(.secondary) + Text(event.requestedReviewerName ?? "ghost").bold()
+            Text("\(Text(actor).bold()) \(Text("removed the review request from").foregroundStyle(.secondary)) \(Text(event.requestedReviewerName ?? "ghost").bold())")
         case .milestoned:
-            Text(actor).bold() + Text(" added this to the ").foregroundStyle(.secondary) + Text(event.milestoneTitle ?? "").bold() + Text(" milestone").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("added this to the").foregroundStyle(.secondary)) \(Text(event.milestoneTitle ?? "").bold()) \(Text("milestone").foregroundStyle(.secondary))")
         case .demilestoned:
-            Text(actor).bold() + Text(" removed this from the ").foregroundStyle(.secondary) + Text(event.milestoneTitle ?? "").bold() + Text(" milestone").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("removed this from the").foregroundStyle(.secondary)) \(Text(event.milestoneTitle ?? "").bold()) \(Text("milestone").foregroundStyle(.secondary))")
         case .merged:
-            Text(actor).bold() + Text(" merged this pull request").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("merged this pull request").foregroundStyle(.secondary))")
         case .closed:
-            Text(actor).bold() + Text(" closed this").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("closed this").foregroundStyle(.secondary))")
         case .reopened:
-            Text(actor).bold() + Text(" reopened this").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("reopened this").foregroundStyle(.secondary))")
         case .renamed:
-            Text(actor).bold() + Text(" changed the title ").foregroundStyle(.secondary) + Text(event.renamedFrom ?? "").strikethrough() + Text(" ") + Text(event.renamedTo ?? "").bold()
+            Text("\(Text(actor).bold()) \(Text("changed the title").foregroundStyle(.secondary)) \(Text(event.renamedFrom ?? "").strikethrough()) \(Text(event.renamedTo ?? "").bold())")
         case .forcePushed:
-            Text(actor).bold() + Text(" force-pushed the branch").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("force-pushed the branch").foregroundStyle(.secondary))")
         case .readyForReview:
-            Text(actor).bold() + Text(" marked this pull request as ready for review").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("marked this pull request as ready for review").foregroundStyle(.secondary))")
         case .convertToDraft:
-            Text(actor).bold() + Text(" converted this to draft").foregroundStyle(.secondary)
+            Text("\(Text(actor).bold()) \(Text("converted this to draft").foregroundStyle(.secondary))")
         }
     }
 

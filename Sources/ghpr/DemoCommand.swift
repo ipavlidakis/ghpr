@@ -3,7 +3,7 @@ import DiffUIModule
 import Foundation
 
 /// Hidden command rendering the bundled large patch in a window — the
-/// AppKit-from-CLI and renderer performance spike (PLAN milestone 4).
+/// AppKit-from-CLI and renderer performance validation path.
 struct DemoCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "demo",

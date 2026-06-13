@@ -19,23 +19,7 @@ struct SubmitReviewView: View {
 
             summaryEditor
 
-            VStack(alignment: .leading, spacing: 10) {
-                VerdictOption(
-                    title: "Comment",
-                    subtitle: "Submit general feedback without explicit approval.",
-                    isSelected: event == .comment
-                ) { event = .comment }
-                VerdictOption(
-                    title: "Approve",
-                    subtitle: "Submit feedback and approve merging these changes.",
-                    isSelected: event == .approve
-                ) { event = .approve }
-                VerdictOption(
-                    title: "Request changes",
-                    subtitle: "Submit feedback suggesting changes.",
-                    isSelected: event == .requestChanges
-                ) { event = .requestChanges }
-            }
+            verdictPicker
 
             if pendingCount > 0 {
                 Text("Includes \(pendingCount) pending inline comment\(pendingCount == 1 ? "" : "s").")
@@ -50,8 +34,9 @@ struct SubmitReviewView: View {
             }
 
             HStack {
-                Spacer()
                 Button("Cancel", role: .cancel, action: onCancel)
+                    .keyboardShortcut(.cancelAction)
+                Spacer()
                 Button {
                     onSubmit(event, summary.trimmingCharacters(in: .whitespacesAndNewlines))
                 } label: {
@@ -62,7 +47,7 @@ struct SubmitReviewView: View {
                         Text("Submit review")
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .tint(.green)
                 .keyboardShortcut(.return, modifiers: .command)
                 .disabled(isBusy || !isValid)
@@ -72,17 +57,23 @@ struct SubmitReviewView: View {
         .frame(width: 380)
     }
 
+    private var verdictPicker: some View {
+        Picker("Verdict", selection: $event) {
+            Text("Comment").tag(GithubReviewEvent.comment)
+            Text("Approve").tag(GithubReviewEvent.approve)
+            Text("Request changes").tag(GithubReviewEvent.requestChanges)
+        }
+        .pickerStyle(.radioGroup)
+        .controlSize(.small)
+    }
+
     private var summaryEditor: some View {
         TextEditor(text: $summary)
             .font(.callout)
             .frame(height: 90)
             .scrollContentBackground(.hidden)
             .padding(6)
-            .background(.background, in: .rect(cornerRadius: 6))
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(.separator, lineWidth: 1)
-            )
+            .modifier(ReviewSurface(cornerRadius: 6))
             .overlay(alignment: .topLeading) {
                 if summary.isEmpty {
                     Text("Leave a comment")
@@ -100,30 +91,4 @@ struct SubmitReviewView: View {
         event != .requestChanges || !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    /// One selectable verdict row: radio indicator, title, description.
-    private struct VerdictOption: View {
-        let title: String
-        let subtitle: String
-        let isSelected: Bool
-        let onSelect: () -> Void
-
-        var body: some View {
-            Button(action: onSelect) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Image(systemName: isSelected ? "inset.filled.circle" : "circle")
-                        .foregroundStyle(isSelected ? Color.accentColor : .secondary)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title)
-                            .font(.callout.weight(.medium))
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-        }
-    }
 }

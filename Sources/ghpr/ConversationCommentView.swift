@@ -29,8 +29,7 @@ struct ConversationCommentView: View {
                     .padding(.bottom, 10)
             }
         }
-        .background(.background.secondary.opacity(0.4), in: .rect(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.separator, lineWidth: 1))
+        .modifier(ReviewSurface())
     }
 
     private var login: String { authorLogin ?? "ghost" }
@@ -63,7 +62,6 @@ struct ConversationCommentView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.quaternary.opacity(0.35))
         .clipShape(.rect(topLeadingRadius: 8, topTrailingRadius: 8))
     }
 
@@ -88,7 +86,7 @@ struct ConversationCommentView: View {
                     .font(.caption)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
-                    .background(.quaternary.opacity(0.6), in: .capsule)
+                    .background(.background.tertiary, in: .capsule)
             }
             if let onReact {
                 // A Menu misfires inside hosted cells; a popover is reliable.

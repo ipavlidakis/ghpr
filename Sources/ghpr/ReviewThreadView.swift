@@ -26,11 +26,7 @@ struct ReviewThreadView: View {
                 content
             }
         }
-        .background(.background.opacity(0.6), in: .rect(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(.separator, lineWidth: 1)
-        )
+        .modifier(ReviewSurface())
         .frame(maxWidth: 640, alignment: .leading)
     }
 

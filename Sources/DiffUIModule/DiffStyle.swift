@@ -1,4 +1,3 @@
-import Foundation
 import AppKit
 import Foundation
 
@@ -12,8 +11,8 @@ enum DiffStyle {
     static let deletionBackground = NSColor.systemRed.withAlphaComponent(0.12)
     static let additionEmphasis = NSColor.systemGreen.withAlphaComponent(0.35)
     static let deletionEmphasis = NSColor.systemRed.withAlphaComponent(0.35)
-    static let hunkHeaderBackground = NSColor.quaternaryLabelColor
-    static let fileHeaderBackground = NSColor.tertiaryLabelColor.withAlphaComponent(0.18)
+    static let hunkHeaderBackground = NSColor.separatorColor.withAlphaComponent(0.08)
+    static let fileHeaderBackground = NSColor.controlBackgroundColor.withAlphaComponent(0.72)
 
     /// Xcode-ish token palette, adaptive to light and dark appearance.
     static func color(for kind: TokenKind) -> NSColor {

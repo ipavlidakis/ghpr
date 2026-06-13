@@ -27,7 +27,7 @@ struct FileDiffHeaderView: View {
             .padding(.vertical, 6)
         }
         .buttonStyle(.plain)
-        .background(.quaternary.opacity(0.5))
+        .background(.background.secondary)
     }
 
     private var title: String {

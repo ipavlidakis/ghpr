@@ -27,7 +27,7 @@ struct ConversationReviewView: View {
                 MarkdownView(text: review.body)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.separator, lineWidth: 1))
+                    .modifier(ReviewSurface())
                     .padding(.leading, 24)
             }
         }

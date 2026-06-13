@@ -21,6 +21,8 @@ struct ViewedProgressView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
     }
 
     private var progress: CGFloat {

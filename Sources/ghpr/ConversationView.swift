@@ -37,11 +37,7 @@ struct ConversationView: View {
 
     private var timeline: some View {
         VStack(alignment: .leading, spacing: 14) {
-            header
-            if !pullRequest.labels.isEmpty {
-                labelsRow
-            }
-            Divider()
+            ConversationHeaderView(pullRequest: pullRequest)
             description
             ForEach(Array(data.timeline.enumerated()), id: \.offset) { _, item in
                 itemView(item)
@@ -125,66 +121,7 @@ struct ConversationView: View {
             .sorted { ($0.comments.first?.createdAt ?? .distantPast) < ($1.comments.first?.createdAt ?? .distantPast) }
     }
 
-    // MARK: Header
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("\(pullRequest.title) ")
-                .font(.title2.weight(.semibold))
-            + Text(verbatim: "#\(pullRequest.number)")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: 8) {
-                stateBadge
-                Text("\(pullRequest.user?.login ?? "ghost") wants to merge")
-                    .foregroundStyle(.secondary)
-                Text(pullRequest.head.ref)
-                    .font(.callout.monospaced())
-                Image(systemName: "arrow.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(pullRequest.base.ref)
-                    .font(.callout.monospaced())
-            }
-            .font(.callout)
-        }
-    }
-
-    private var stateBadge: some View {
-        Text(stateText)
-            .font(.caption.weight(.bold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(stateColor, in: .capsule)
-    }
-
-    private var stateText: String {
-        if pullRequest.draft { "Draft" }
-        else if pullRequest.mergedAt != nil { "Merged" }
-        else if pullRequest.state == "open" { "Open" }
-        else { "Closed" }
-    }
-
-    private var stateColor: Color {
-        if pullRequest.draft { .gray }
-        else if pullRequest.mergedAt != nil { .purple }
-        else if pullRequest.state == "open" { .green }
-        else { .red }
-    }
-
-    private var labelsRow: some View {
-        HStack(spacing: 8) {
-            ForEach(pullRequest.labels, id: \.name) { label in
-                Text(label.name)
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background((Color(hex: label.color) ?? .gray).opacity(0.25), in: .capsule)
-            }
-        }
-    }
+    // MARK: Description
 
     private var description: some View {
         ConversationCommentView(

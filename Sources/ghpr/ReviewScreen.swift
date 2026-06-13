@@ -34,10 +34,29 @@ struct ReviewScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            headerBar
-            tabBar
-            Divider()
-            content
+            reviewTabs
+        }
+        .navigationTitle("\(model.data.reference.repository.fullName) #\(model.data.reference.number)")
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                toolbarTitle
+            }
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            ToolbarItemGroup(placement: .primaryAction) {
+                if tab == .conversation {
+                    Button {
+                        open(model.data.pullRequest.htmlUrl)
+                    } label: {
+                        Label("Open in GitHub", systemImage: "arrow.up.forward.square")
+                    }
+                    .buttonStyle(.glass)
+                    .keyboardShortcut("o", modifiers: [.command, .shift])
+                }
+                if tab == .files {
+                    ViewedProgressView(viewed: viewedFiles.count, total: model.data.files.count)
+                    submitButton
+                }
+            }
         }
         .alert("GitHub request failed", isPresented: errorShown) {
             Button("OK") { model.errorMessage = nil }
@@ -70,17 +89,39 @@ struct ReviewScreen: View {
         Dictionary(uniqueKeysWithValues: model.data.files.map { ($0.path, $0.contentDigest) })
     }
 
-    @ViewBuilder
-    private var content: some View {
-        switch tab {
-        case .conversation:
+    private var reviewTabs: some View {
+        TabView(selection: $tab) {
             ConversationView(model: model)
-        case .commits:
+                .tabItem {
+                    Label(ReviewTab.conversation.title, systemImage: ReviewTab.conversation.systemImage)
+                }
+                .badge(conversationCount)
+                .tag(ReviewTab.conversation)
+                .keyboardShortcut("1", modifiers: .command)
+
             CommitsListView(commits: model.data.commits)
-        case .checks:
+                .tabItem {
+                    Label(ReviewTab.commits.title, systemImage: ReviewTab.commits.systemImage)
+                }
+                .badge(model.data.commits.count)
+                .tag(ReviewTab.commits)
+                .keyboardShortcut("2", modifiers: .command)
+
             ChecksListView(checkRuns: model.data.checkRuns)
-        case .files:
+                .tabItem {
+                    Label(ReviewTab.checks.title, systemImage: ReviewTab.checks.systemImage)
+                }
+                .badge(model.data.checkRuns.count)
+                .tag(ReviewTab.checks)
+                .keyboardShortcut("3", modifiers: .command)
+
             filesSplitView
+                .tabItem {
+                    Label(ReviewTab.files.title, systemImage: ReviewTab.files.systemImage)
+                }
+                .badge(model.data.files.count)
+                .tag(ReviewTab.files)
+                .keyboardShortcut("4", modifiers: .command)
         }
     }
 
@@ -95,53 +136,63 @@ struct ReviewScreen: View {
     }
 
     private var filesSplitView: some View {
-        NavigationSplitView {
-            FileListView(items: model.data.files.map(FileListItem.init), selectedPath: selectedPath) { item in
-                selectedPath = item.path
-                scrollTarget = DiffScrollTarget(path: item.path)
+        Group {
+            if model.data.files.isEmpty {
+                ContentUnavailableView(
+                    "No changed files",
+                    systemImage: "doc.text",
+                    description: Text("This pull request did not return any file changes.")
+                )
+            } else {
+                NavigationSplitView {
+                    FileListView(items: model.data.files.map(FileListItem.init), selectedPath: selectedPath) { item in
+                        selectedPath = item.path
+                        scrollTarget = DiffScrollTarget(path: item.path)
+                    }
+                    .navigationSplitViewColumnWidth(min: 220, ideal: 280)
+                } detail: {
+                    MultiFileDiffView(
+                        files: displayFiles,
+                        highlighter: highlighter,
+                        annotations: annotations,
+                        filePreviews: filePreviews,
+                        viewedFiles: viewedFiles,
+                        collapsedFiles: collapsedFiles,
+                        onViewedToggle: { path, isViewed in
+                            if isViewed {
+                                viewedFiles.insert(path)
+                                collapsedFiles.insert(path)
+                            } else {
+                                viewedFiles.remove(path)
+                                collapsedFiles.remove(path)
+                            }
+                            let digest = model.data.files.first { $0.path == path }?.contentDigest ?? ""
+                            Task {
+                                await viewedStore.setViewed(isViewed, path: path, digest: digest, in: pullRequestKey)
+                            }
+                        },
+                        onCollapseToggle: { path in
+                            if !collapsedFiles.insert(path).inserted {
+                                collapsedFiles.remove(path)
+                            }
+                        },
+                        onLineClick: { path, line in
+                            composerTarget = line.anchors.first.map { DiffFileAnchor(path: path, anchor: $0) }
+                        },
+                        onExpandFile: { path in
+                            Task {
+                                if let expanded = await model.expandedFile(for: path) {
+                                    expandedFiles[path] = expanded
+                                }
+                            }
+                        },
+                        expandedFiles: Set(expandedFiles.keys),
+                        fileActions: fileActions,
+                        onVisibleFileChange: { selectedPath = $0 },
+                        scrollTarget: scrollTarget
+                    )
+                }
             }
-            .navigationSplitViewColumnWidth(min: 260, ideal: 340)
-        } detail: {
-            MultiFileDiffView(
-                files: displayFiles,
-                highlighter: highlighter,
-                annotations: annotations,
-                filePreviews: filePreviews,
-                viewedFiles: viewedFiles,
-                collapsedFiles: collapsedFiles,
-                onViewedToggle: { path, isViewed in
-                    if isViewed {
-                        viewedFiles.insert(path)
-                        collapsedFiles.insert(path)
-                    } else {
-                        viewedFiles.remove(path)
-                        collapsedFiles.remove(path)
-                    }
-                    let digest = model.data.files.first { $0.path == path }?.contentDigest ?? ""
-                    Task {
-                        await viewedStore.setViewed(isViewed, path: path, digest: digest, in: pullRequestKey)
-                    }
-                },
-                onCollapseToggle: { path in
-                    if !collapsedFiles.insert(path).inserted {
-                        collapsedFiles.remove(path)
-                    }
-                },
-                onLineClick: { path, line in
-                    composerTarget = line.anchors.first.map { DiffFileAnchor(path: path, anchor: $0) }
-                },
-                onExpandFile: { path in
-                    Task {
-                        if let expanded = await model.expandedFile(for: path) {
-                            expandedFiles[path] = expanded
-                        }
-                    }
-                },
-                expandedFiles: Set(expandedFiles.keys),
-                fileActions: fileActions,
-                onVisibleFileChange: { selectedPath = $0 },
-                scrollTarget: scrollTarget
-            )
         }
     }
 
@@ -183,87 +234,25 @@ struct ReviewScreen: View {
 
     // MARK: Tabs
 
-    private var tabBar: some View {
-        HStack(spacing: 4) {
-            tabButton(.conversation, count: conversationCount)
-            tabButton(.commits, count: model.data.commits.count)
-            tabButton(.checks, count: model.data.checkRuns.count)
-            tabButton(.files, count: model.data.files.count)
-            Spacer()
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(.bar)
-    }
-
     /// Comment cards in the timeline, like GitHub's conversation counter.
     private var conversationCount: Int {
         model.data.timeline.count { if case .comment = $0 { true } else { false } }
     }
 
-    private func tabButton(_ target: ReviewTab, count: Int) -> some View {
-        Button {
-            tab = target
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: target.systemImage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(target.title)
-                    .font(.callout.weight(tab == target ? .semibold : .regular))
-                if count > 0 {
-                    Text(verbatim: "\(count)")
-                        .font(.caption.monospacedDigit())
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1)
-                        .background(.quaternary.opacity(0.7), in: .capsule)
-                }
-            }
-            .contentShape(.rect)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                tab == target ? AnyShapeStyle(.quaternary.opacity(0.55)) : AnyShapeStyle(.clear),
-                in: .rect(cornerRadius: 6)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: Header bar (title left, submit top-trailing, like GitHub)
-
-    private var headerBar: some View {
-        HStack(spacing: 12) {
-            Text("\(model.data.pullRequest.title) ")
+    private var toolbarTitle: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(model.data.pullRequest.title)
                 .font(.headline)
-            + Text(verbatim: "#\(model.data.pullRequest.number)")
-                .font(.headline)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Text(verbatim: "\(model.data.reference.repository.fullName) #\(model.data.pullRequest.number)")
+                .font(.caption)
                 .foregroundStyle(.secondary)
-            Spacer()
-            Button {
-                open(model.data.pullRequest.htmlUrl)
-            } label: {
-                Label("Open in GitHub", systemImage: "arrow.up.forward.square")
-            }
-            .buttonStyle(.bordered)
-            .opacity(tab == .conversation ? 1 : 0)
-            .disabled(tab != .conversation)
-            // Invisible rather than removed off the files tab: the button
-            // defines the header's height, so removing it makes the whole
-            // bar jump between tabs.
-            ViewedProgressView(viewed: viewedFiles.count, total: model.data.files.count)
-                .opacity(tab == .files ? 1 : 0)
-            submitButton
-                .opacity(tab == .files ? 1 : 0)
-                .disabled(tab != .files)
+                .lineLimit(1)
         }
-        .lineLimit(1)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .background(.bar)
-        .overlay(alignment: .bottom) {
-            Divider()
-        }
+        .frame(maxWidth: 360, alignment: .leading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
     }
 
     private var submitButton: some View {
@@ -279,7 +268,7 @@ struct ReviewScreen: View {
                 Text("Submit review (\(model.pendingComments.count))")
             }
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.glassProminent)
         .tint(.green)
         .keyboardShortcut(.return, modifiers: .command)
         .disabled(model.isBusy)

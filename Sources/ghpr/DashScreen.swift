@@ -15,8 +15,6 @@ struct DashScreen: View {
         @Bindable var model = model
 
         VStack(spacing: 0) {
-            header
-            Divider()
             if model.filtered.isEmpty {
                 ContentUnavailableView(
                     "No open pull requests",
@@ -28,38 +26,42 @@ struct DashScreen: View {
                 list
             }
         }
+        .navigationTitle(model.repository.fullName)
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Text(model.repository.fullName)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 320, alignment: .leading)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+            }
+            ToolbarItem(placement: .principal) {
+                Picker("Filter", selection: $model.filter) {
+                    ForEach(DashFilter.allCases, id: \.self) { filter in
+                        Text(filter.title).tag(filter)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 300)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    Task { await model.reload() }
+                } label: {
+                    Label("Reload", systemImage: "arrow.clockwise")
+                }
+                .help("Reload")
+                .keyboardShortcut("r", modifiers: .command)
+            }
+        }
         .alert("GitHub request failed", isPresented: errorShown) {
             Button("OK") { model.errorMessage = nil }
         } message: {
             Text(model.errorMessage ?? "")
         }
-    }
-
-    private var header: some View {
-        @Bindable var model = model
-
-        return HStack(spacing: 12) {
-            Text(model.repository.fullName)
-                .font(.headline)
-            Spacer()
-            Picker("Filter", selection: $model.filter) {
-                ForEach(DashFilter.allCases, id: \.self) { filter in
-                    Text(filter.title).tag(filter)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            Button {
-                Task { await model.reload() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .help("Reload")
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.bar)
     }
 
     private var list: some View {

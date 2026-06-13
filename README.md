@@ -25,7 +25,7 @@ ghpr dash                                     # browse the repo's open PRs
 brew install ipavlidakis/tap/ghpr
 ```
 
-Apple Silicon, macOS 14+.
+Apple Silicon, macOS 26+.
 
 ### From source
 
@@ -68,7 +68,7 @@ In the review window: click a line's `+` to comment (batch into a review or send
 swift build && swift test
 ```
 
-The package is a single product with four targets: `ghpr` (composition root + UI screens), `GithubModule` (REST/GraphQL client), `DiffUIModule` (diff parsing and rendering, GitHub-unaware), and `AuthenticationModule` (token chain). See `PLAN.md` for architecture decisions.
+The package is a single product with four targets: `ghpr` (composition root + UI screens), `GithubModule` (REST/GraphQL client), `DiffUIModule` (diff parsing and rendering, GitHub-unaware), and `AuthenticationModule` (token chain).
 
 ## License
 

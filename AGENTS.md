@@ -1,7 +1,5 @@
 # ghpr — Agent instructions
 
-Read `PLAN.md` first: it is the source of truth for scope, architecture decisions, and milestones.
-
 ## Core principles
 
 - **Simplicity above all.** Code must always be as simple as possible, clean, and readable. If something can be expressed with less code or fewer concepts, do that. No speculative abstractions.
