@@ -3,11 +3,9 @@ import Foundation
 /// Runs async work from the synchronous CLI entry point by pumping the main
 /// run loop until it finishes.
 ///
-/// The executable's main must stay synchronous: a Swift-async main parks the
-/// main thread in the concurrency drain loop, and once `NSApplication.run()`
-/// starts inside it, MainActor continuations starve — awaits never resume in
-/// the UI. With a synchronous main, MainActor jobs flow through the main
-/// dispatch queue, which both this pump and AppKit's run loop service.
+/// The executable's main stays synchronous: a Swift-async main parks the
+/// main thread in the concurrency drain loop, and MainActor work can starve.
+/// With a synchronous main, MainActor jobs flow through the same run loop.
 enum AsyncBridge {
     @MainActor
     private final class ResultBox<Success> {

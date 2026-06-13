@@ -1,5 +1,4 @@
 import CryptoKit
-import DiffUIModule
 import Foundation
 
 /// Content identity for viewed-state invalidation.

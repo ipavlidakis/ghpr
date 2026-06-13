@@ -1,7 +1,6 @@
 import Foundation
 
-/// Everything needed to render one file's diff. The module's own input
-/// format — deliberately unaware of GitHub or any other diff producer.
+/// Everything needed to represent one file's diff.
 package struct FileDiff: Sendable, Equatable {
     /// The file's current path (the pre-deletion path for deleted files).
     package let path: String

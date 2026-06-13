@@ -1,4 +1,3 @@
-import DiffUIModule
 import Foundation
 import Testing
 @testable import ghpr

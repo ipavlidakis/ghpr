@@ -1,9 +1,6 @@
 import Foundation
 
-/// Parses git-style unified diffs (the format GitHub serves) into `FileDiff` values.
-///
-/// Lenient by design: unrecognized lines are skipped, so trailing garbage or
-/// future git headers never abort a render.
+/// Parses git-style unified diffs into `FileDiff` values.
 package struct UnifiedDiffParser: Sendable {
     package init() {}
 
@@ -91,8 +88,7 @@ package struct UnifiedDiffParser: Sendable {
             return String(raw)
         }
 
-        /// Last-resort path extraction (binary files and 100%-similarity renames
-        /// have no `---`/`+++` lines): `diff --git a/path b/path`.
+        /// Last-resort path extraction for files with missing headers.
         private static func pathFromGitHeader(_ header: Substring) -> String? {
             let payload = header.dropFirst("diff --git ".count)
             guard let separator = payload.range(of: " b/"), payload.hasPrefix("a/") else { return nil }
@@ -127,8 +123,7 @@ package struct UnifiedDiffParser: Sendable {
             newLine = newStart
         }
 
-        /// True once both sides have produced every line the header promised,
-        /// so trailing blank lines never leak into the hunk.
+        /// True once both sides have produced every line the header promised.
         var isComplete: Bool {
             oldLine >= oldStart + oldCount && newLine >= newStart + newCount
         }
@@ -142,12 +137,10 @@ package struct UnifiedDiffParser: Sendable {
                 lines.append(DiffLine(kind: .deletion, text: String(line.dropFirst()), oldLineNumber: oldLine, newLineNumber: nil))
                 oldLine += 1
             case " ", nil:
-                // git emits genuinely empty context lines without the leading space.
                 lines.append(DiffLine(kind: .context, text: String(line.dropFirst(line.isEmpty ? 0 : 1)), oldLineNumber: oldLine, newLineNumber: newLine))
                 oldLine += 1
                 newLine += 1
             default:
-                // "\ No newline at end of file" and anything unrecognized.
                 break
             }
         }

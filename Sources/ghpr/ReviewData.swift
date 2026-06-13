@@ -1,8 +1,7 @@
-import DiffUIModule
 import Foundation
 import GithubModule
 
-/// Everything the review window shows, fetched in parallel.
+/// All pull request data needed for CLI summaries, fetched in parallel.
 struct ReviewData: Sendable {
     let reference: GithubPullRequestReference
     let pullRequest: GithubPullRequest
@@ -31,5 +30,17 @@ struct ReviewData: Sendable {
             commits: try await commits,
             timeline: try await timeline
         )
+    }
+
+    func printSummary() {
+        print("Repository: \(reference.repository.fullName) #\(reference.number)")
+        print("Title: \(pullRequest.title)")
+        print("State: \(pullRequest.state)")
+        print("URL: \(pullRequest.htmlUrl)")
+        print("Files: \(files.count)")
+        print("Commits: \(commits.count)")
+        print("Checks: \(checkRuns.count)")
+        print("Timeline entries: \(timeline.count)")
+        print("Threads: \(threads.count)")
     }
 }

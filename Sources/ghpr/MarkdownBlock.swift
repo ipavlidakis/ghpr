@@ -1,9 +1,9 @@
 import Foundation
 
 /// Block-level structure of a markdown document. `AttributedString`'s full
-/// markdown parsing produces presentation intents SwiftUI ignores, so block
-/// layout (headings, lists, fences, tables, details) is parsed here and
-/// styled natively; inline styling stays with `AttributedString`.
+/// markdown parsing omits some block structure here, so layout (headings,
+/// lists, fences, tables, details) is parsed explicitly and inline styling
+/// stays with `AttributedString`.
 enum MarkdownBlock: Equatable {
     case heading(level: Int, text: String)
     case paragraph(String)

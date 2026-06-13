@@ -122,7 +122,7 @@ struct MarkdownBlockTests {
         |title|develop|branch|diff|status|
         |-|-|-|-|-|
         |StreamVideo|10.05 MB|10.05 MB|0 KB|🟢|
-        |StreamVideoSwiftUI|2.45 MB|2.45 MB|0 KB|🟢|
+        |StreamVideoSwift|2.45 MB|2.45 MB|0 KB|🟢|
         """
 
         let blocks = MarkdownBlock.parse(text)
@@ -133,7 +133,7 @@ struct MarkdownBlockTests {
                 header: ["title", "develop", "branch", "diff", "status"],
                 rows: [
                     ["StreamVideo", "10.05 MB", "10.05 MB", "0 KB", "🟢"],
-                    ["StreamVideoSwiftUI", "2.45 MB", "2.45 MB", "0 KB", "🟢"],
+                    ["StreamVideoSwift", "2.45 MB", "2.45 MB", "0 KB", "🟢"],
                 ]
             ),
         ])

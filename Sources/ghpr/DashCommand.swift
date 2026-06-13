@@ -1,24 +1,17 @@
-import AppKit
 import ArgumentParser
 import AuthenticationModule
 import Foundation
 import GithubModule
 
-/// Opens the dashboard: open pull requests for the current directory's repo.
+/// Lists open pull requests for the current directory's repo.
 struct DashCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "dash",
-        abstract: "Browse the current repository's open pull requests."
+        abstract: "List open pull requests for the current repository."
     )
 
-    @Flag(help: "Return the terminal immediately; the window keeps running in the background.")
-    var detach = false
-
     func run() throws {
-        if detach {
-            try Detach.relaunchInBackground()
-        }
-        let (model, repository) = try AsyncBridge.run { () -> (DashModel, GithubRepository) in
+        let (pullRequests, repository) = try AsyncBridge.run { () -> ([GithubPullRequest], GithubRepository) in
             guard let token = await TokenResolver().resolve() else {
                 throw ValidationError("""
                 No GitHub token found. To authenticate, either:
@@ -31,15 +24,18 @@ struct DashCommand: ParsableCommand {
             let repository = try await LocalRepository().repository()
 
             print("Loading open pull requests for \(repository.fullName)…")
-            return (try await DashModel.load(with: client, repository: repository), repository)
+            return (try await client.openPullRequests(in: repository), repository)
         }
 
-        MainActor.assumeIsolated {
-            AppBootstrap.run(
-                title: "\(repository.fullName) — open pull requests",
-                size: NSSize(width: 780, height: 560),
-                content: DashScreen(model: model)
-            )
+        if pullRequests.isEmpty {
+            print("No open pull requests found for \(repository.fullName).")
+            return
+        }
+
+        print("Open pull requests for \(repository.fullName):")
+        for pullRequest in pullRequests {
+            print("  #\(pullRequest.number) [\(pullRequest.state)] \(pullRequest.title)")
+            print("    URL: \(pullRequest.htmlUrl)")
         }
     }
 }
