@@ -25,7 +25,7 @@ struct OpenCommand: ParsableCommand {
     func run() throws {
         let urlArgument = pullRequestURL
 
-        let destination = try AsyncBridge.run { () -> Destination in
+        let token = try AsyncBridge.run {
             guard let token = await TokenResolver().resolve() else {
                 throw ValidationError("""
                 No GitHub token found. To authenticate, either:
@@ -34,7 +34,13 @@ struct OpenCommand: ParsableCommand {
                   • sign in to the gh CLI (`gh auth login`) and ghpr will borrow its token.
                 """)
             }
-            let client = GithubClient(token: token.value)
+
+            return token
+        }
+
+        let client = GithubClient(token: token.value)
+
+        let destination = try AsyncBridge.run { () -> Destination in
 
             if let urlArgument {
                 guard let reference = GithubPullRequestReference(url: urlArgument) else {
@@ -64,14 +70,19 @@ struct OpenCommand: ParsableCommand {
         }
 
         MainActor.assumeIsolated {
-            WindowRunner().open(windowContent(for: destination))
+            WindowRunner(pullRequestContent: { pullRequest, repository in
+                let reference = GithubPullRequestReference(repository: repository, number: pullRequest.number)
+                print("Loading \(reference.repository.fullName) #\(reference.number)…")
+                return windowContent(for: .review(try await ReviewData.load(with: client, reference: reference)))
+            })
+            .open(windowContent(for: destination))
         }
     }
 
     private func windowContent(for destination: Destination) -> WindowContent {
         switch destination {
         case .review(let data):
-            .pullRequest(data.pullRequest, data.reference.repository)
+            .pullRequest(data.pullRequest, data.reference.repository, data.checkRuns.count)
         case .dash(let pullRequests, let repository, let currentUser):
             .dashboard(pullRequests, repository, currentUser)
         }

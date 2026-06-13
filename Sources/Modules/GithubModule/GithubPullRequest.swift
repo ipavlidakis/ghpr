@@ -16,6 +16,9 @@ package struct GithubPullRequest: Sendable, Equatable, Decodable {
     package let labels: [GithubLabel]
     package let requestedReviewers: [GithubUser]
     package let assignees: [GithubUser]?
+    package let comments: Int?
+    package let reviewComments: Int?
+    package let commits: Int?
     package let head: GithubBranchRef
     package let base: GithubBranchRef
     package let createdAt: Date

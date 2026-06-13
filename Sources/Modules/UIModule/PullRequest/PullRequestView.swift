@@ -8,15 +8,21 @@ package struct PullRequestView: View {
     package let pullRequest: GithubPullRequest
     /// Repository that owns the pull request.
     package let repository: GithubRepository
+    /// Shared tab selection state.
+    package let tabState: PullRequestTabState
 
     /// Creates a pull request view for a repository pull request.
-    package init(pullRequest: GithubPullRequest, repository: GithubRepository) {
+    package init(pullRequest: GithubPullRequest, repository: GithubRepository, tabState: PullRequestTabState) {
         self.pullRequest = pullRequest
         self.repository = repository
+        self.tabState = tabState
     }
 
     /// Blue placeholder pull request content.
     package var body: some View {
-        Color.blue
+        switch tabState.selectedTab {
+        case .conversations, .commits, .checks, .filesChanged:
+            Color.blue
+        }
     }
 }

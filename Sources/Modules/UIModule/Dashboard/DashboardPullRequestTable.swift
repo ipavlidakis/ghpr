@@ -7,21 +7,29 @@ import SwiftUI
 package struct DashboardPullRequestTable: NSViewRepresentable {
     /// Pull requests displayed by the table.
     package let pullRequests: [GithubPullRequest]
+    /// Pull request numbers currently loading.
+    package let loadingPullRequestNumbers: Set<Int>
     /// Opens a pull request from a table row.
     package let openPullRequest: @MainActor (GithubPullRequest) -> Void
 
     /// Creates an AppKit table for dashboard pull requests.
     package init(
         pullRequests: [GithubPullRequest],
+        loadingPullRequestNumbers: Set<Int>,
         openPullRequest: @escaping @MainActor (GithubPullRequest) -> Void
     ) {
         self.pullRequests = pullRequests
+        self.loadingPullRequestNumbers = loadingPullRequestNumbers
         self.openPullRequest = openPullRequest
     }
 
     /// Creates the table coordinator that owns AppKit delegate state.
     package func makeCoordinator() -> DashboardPullRequestTableCoordinator {
-        DashboardPullRequestTableCoordinator(pullRequests: pullRequests, openPullRequest: openPullRequest)
+        DashboardPullRequestTableCoordinator(
+            pullRequests: pullRequests,
+            loadingPullRequestNumbers: loadingPullRequestNumbers,
+            openPullRequest: openPullRequest
+        )
     }
 
     /// Creates the AppKit scroll container and table view.
@@ -32,6 +40,7 @@ package struct DashboardPullRequestTable: NSViewRepresentable {
         tableView.selectionHighlightStyle = .regular
         tableView.allowsMultipleSelection = false
         tableView.allowsColumnResizing = false
+        tableView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
         tableView.intercellSpacing = .zero
         tableView.backgroundColor = .clear
         tableView.delegate = context.coordinator
@@ -48,6 +57,7 @@ package struct DashboardPullRequestTable: NSViewRepresentable {
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
         scrollView.documentView = tableView
+        column.width = scrollView.contentSize.width
 
         context.coordinator.tableView = tableView
         return scrollView
@@ -55,13 +65,19 @@ package struct DashboardPullRequestTable: NSViewRepresentable {
 
     /// Keeps the AppKit table in sync with SwiftUI state.
     package func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        context.coordinator.update(pullRequests: pullRequests, openPullRequest: openPullRequest)
+        context.coordinator.update(
+            pullRequests: pullRequests,
+            loadingPullRequestNumbers: loadingPullRequestNumbers,
+            openPullRequest: openPullRequest
+        )
 
         guard let tableView = scrollView.documentView as? NSTableView else {
             return
         }
 
-        tableView.tableColumns.first?.width = scrollView.contentSize.width
+        if let column = tableView.tableColumns.first {
+            column.width = scrollView.contentSize.width
+        }
         tableView.reloadData()
     }
 }

@@ -14,23 +14,28 @@ package final class DashboardPullRequestTableCoordinator: NSObject, NSTableViewD
 
     private let cellIdentifier = NSUserInterfaceItemIdentifier("pullRequestCell")
     private var pullRequests: [GithubPullRequest]
+    private var loadingPullRequestNumbers: Set<Int>
     private var openPullRequest: @MainActor (GithubPullRequest) -> Void
 
     /// Creates table delegate state.
     package init(
         pullRequests: [GithubPullRequest],
+        loadingPullRequestNumbers: Set<Int>,
         openPullRequest: @escaping @MainActor (GithubPullRequest) -> Void
     ) {
         self.pullRequests = pullRequests
+        self.loadingPullRequestNumbers = loadingPullRequestNumbers
         self.openPullRequest = openPullRequest
     }
 
     /// Updates the table data source.
     package func update(
         pullRequests: [GithubPullRequest],
+        loadingPullRequestNumbers: Set<Int>,
         openPullRequest: @escaping @MainActor (GithubPullRequest) -> Void
     ) {
         self.pullRequests = pullRequests
+        self.loadingPullRequestNumbers = loadingPullRequestNumbers
         self.openPullRequest = openPullRequest
     }
 
@@ -45,14 +50,18 @@ package final class DashboardPullRequestTableCoordinator: NSObject, NSTableViewD
             return nil
         }
 
-        let rowView = DashboardPullRequestRow(pullRequest: pullRequests[row])
+        let pullRequest = pullRequests[row]
+        let rowView = DashboardPullRequestRow(
+            pullRequest: pullRequest,
+            isLoading: loadingPullRequestNumbers.contains(pullRequest.number)
+        )
 
-        if let cell = tableView.makeView(withIdentifier: cellIdentifier, owner: self) as? NSHostingView<DashboardPullRequestRow> {
-            cell.rootView = rowView
+        if let cell = tableView.makeView(withIdentifier: cellIdentifier, owner: self) as? DashboardPullRequestCellView {
+            cell.update(rowView: rowView)
             return cell
         }
 
-        let cell = NSHostingView(rootView: rowView)
+        let cell = DashboardPullRequestCellView(rowView: rowView)
         cell.identifier = cellIdentifier
         return cell
     }

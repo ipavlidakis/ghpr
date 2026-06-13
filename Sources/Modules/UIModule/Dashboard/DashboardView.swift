@@ -13,7 +13,9 @@ package struct DashboardView: View {
     /// Shared dashboard filter state.
     package let filterState: DashboardFilterState
     /// Opens a pull request from the dashboard.
-    package let openPullRequest: @MainActor (GithubPullRequest) -> Void
+    package let openPullRequest: @MainActor (GithubPullRequest) async -> Void
+
+    @State private var loadingPullRequestNumbers: Set<Int> = []
 
     /// Creates a dashboard view for a repository and its pull requests.
     package init(
@@ -21,7 +23,7 @@ package struct DashboardView: View {
         repository: GithubRepository,
         currentUser: GithubUser,
         filterState: DashboardFilterState,
-        openPullRequest: @escaping @MainActor (GithubPullRequest) -> Void
+        openPullRequest: @escaping @MainActor (GithubPullRequest) async -> Void
     ) {
         self.pullRequests = pullRequests
         self.repository = repository
@@ -36,7 +38,11 @@ package struct DashboardView: View {
             if filteredPullRequests.isEmpty {
                 DashboardEmptyView(authorFilter: filterState.authorFilter)
             } else {
-                DashboardPullRequestTable(pullRequests: filteredPullRequests, openPullRequest: openPullRequest)
+                DashboardPullRequestTable(
+                    pullRequests: filteredPullRequests,
+                    loadingPullRequestNumbers: loadingPullRequestNumbers,
+                    openPullRequest: open
+                )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -52,6 +58,19 @@ package struct DashboardView: View {
             }
         case .all:
             pullRequests
+        }
+    }
+
+    private func open(_ pullRequest: GithubPullRequest) {
+        guard !loadingPullRequestNumbers.contains(pullRequest.number) else {
+            return
+        }
+
+        loadingPullRequestNumbers.insert(pullRequest.number)
+
+        Task { @MainActor in
+            await openPullRequest(pullRequest)
+            loadingPullRequestNumbers.remove(pullRequest.number)
         }
     }
 }
