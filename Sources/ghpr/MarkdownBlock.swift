@@ -7,9 +7,12 @@ import Foundation
 enum MarkdownBlock: Equatable {
     case heading(level: Int, text: String)
     case paragraph(String)
+    case rightAlignedParagraph(String)
     case code(language: String?, text: String)
     case bullets([String])
+    case task(checked: Bool, text: String)
     case quote(String)
+    indirect case alert(kind: String, blocks: [MarkdownBlock])
     case rule
     case table(header: [String], rows: [[String]])
     /// A `<details>` disclosure with its `<summary>` label, as bot comments
@@ -34,7 +37,9 @@ enum MarkdownBlock: Equatable {
 
         func flushParagraph() {
             if !paragraph.isEmpty {
-                blocks.append(.paragraph(paragraph.joined(separator: "\n")))
+                for line in paragraph {
+                    blocks.append(.paragraph(emojiShortcodes(in: line)))
+                }
                 paragraph = []
             }
         }
@@ -82,6 +87,10 @@ enum MarkdownBlock: Equatable {
                 if !trimmed.contains("-->") { inHTMLComment = true }
                 continue
             }
+            if line.contains("<!--") {
+                line = stripInlineHTMLComments(line)
+                trimmed = line.trimmingCharacters(in: .whitespaces)
+            }
 
             // Presentational wrappers bots emit around details content.
             if trimmed.contains("<") {
@@ -109,6 +118,22 @@ enum MarkdownBlock: Equatable {
                 continue
             }
 
+            if trimmed.lowercased().hasPrefix("<p"), trimmed.lowercased().contains(#"align="right""#) {
+                flushParagraph()
+                flushBullets()
+                var end = current
+                while end < lines.count {
+                    end += 1
+                    if lines[end - 1].lowercased().contains("</p>") { break }
+                }
+                let text = plainHTMLText(lines[current..<end].joined(separator: "\n"))
+                if !text.isEmpty {
+                    blocks.append(.rightAlignedParagraph(text))
+                }
+                index = end
+                continue
+            }
+
             if trimmed.lowercased().hasPrefix("<table") {
                 flushParagraph()
                 flushBullets()
@@ -122,7 +147,7 @@ enum MarkdownBlock: Equatable {
                 continue
             }
 
-            if trimmed.hasPrefix("|"), index < lines.count, isTableSeparator(lines[index]) {
+            if index < lines.count, tableCells(trimmed).count > 1, isTableSeparator(lines[index]) {
                 flushParagraph()
                 flushBullets()
                 let header = tableCells(trimmed)
@@ -130,7 +155,7 @@ enum MarkdownBlock: Equatable {
                 var cursor = index + 1
                 while cursor < lines.count {
                     let row = lines[cursor].trimmingCharacters(in: .whitespaces)
-                    guard row.hasPrefix("|") else { break }
+                    guard !row.isEmpty, row.contains("|") else { break }
                     rows.append(tableCells(row))
                     cursor += 1
                 }
@@ -145,27 +170,38 @@ enum MarkdownBlock: Equatable {
             } else if let heading = headingLevel(of: trimmed) {
                 flushParagraph()
                 flushBullets()
-                blocks.append(.heading(level: heading.level, text: heading.text))
+                blocks.append(.heading(level: heading.level, text: emojiShortcodes(in: heading.text)))
             } else if trimmed == "---" || trimmed == "***" {
                 flushParagraph()
                 flushBullets()
                 blocks.append(.rule)
-            } else if let item = bulletItem(of: trimmed) {
-                flushParagraph()
-                bullets.append(item)
-            } else if trimmed.hasPrefix("> ") {
+            } else if isQuoteLine(trimmed) {
                 flushParagraph()
                 flushBullets()
-                blocks.append(.quote(String(trimmed.dropFirst(2))))
+                var quoteLines = [unquotedLine(line)]
+                while index < lines.count {
+                    let quoteLine = lines[index]
+                    guard isQuoteLine(quoteLine.trimmingCharacters(in: .whitespaces)) else { break }
+                    quoteLines.append(unquotedLine(quoteLine))
+                    index += 1
+                }
+                blocks.append(quoteBlock(quoteLines))
+            } else if let task = taskItem(of: trimmed) {
+                flushParagraph()
+                flushBullets()
+                blocks.append(.task(checked: task.checked, text: task.text))
+            } else if let item = bulletItem(of: trimmed) {
+                flushParagraph()
+                bullets.append(emojiShortcodes(in: item))
             } else if !bullets.isEmpty {
                 // Continuation of the previous list item.
-                bullets[bullets.count - 1] += " " + trimmed
+                bullets[bullets.count - 1] += " " + emojiShortcodes(in: trimmed)
             } else {
                 if line.contains("<") {
                     line = plainHTMLText(line)
                 }
                 if !line.isEmpty {
-                    paragraph.append(line)
+                    paragraph.append(emojiShortcodes(in: line))
                 }
             }
         }
@@ -180,6 +216,33 @@ enum MarkdownBlock: Equatable {
 
     // MARK: Details
 
+    private static func quoteBlock(_ lines: [String]) -> MarkdownBlock {
+        guard let firstContentIndex = lines.firstIndex(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }) else {
+            return .quote("")
+        }
+
+        let first = lines[firstContentIndex].trimmingCharacters(in: .whitespaces)
+        if first.hasPrefix("[!"), first.hasSuffix("]") {
+            let kind = String(first.dropFirst(2).dropLast()).lowercased()
+            var body = lines
+            body.removeSubrange(0...firstContentIndex)
+            return .alert(kind: kind, blocks: parse(lines: body))
+        }
+
+        return .quote(emojiShortcodes(in: lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)))
+    }
+
+    private static func isQuoteLine(_ line: String) -> Bool {
+        line == ">" || line.hasPrefix("> ")
+    }
+
+    private static func unquotedLine(_ line: String) -> String {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed == ">" { return "" }
+        if trimmed.hasPrefix("> ") { return String(trimmed.dropFirst(2)) }
+        return line
+    }
+
     private static func detailsBlock(_ segment: [String]) -> MarkdownBlock {
         var text = segment.joined(separator: "\n")
 
@@ -192,12 +255,12 @@ enum MarkdownBlock: Equatable {
 
         var summary = "Details"
         if let range = text.range(of: "(?s)<summary>.*?</summary>", options: [.regularExpression, .caseInsensitive]) {
-            summary = String(text[range])
+            summary = emojiShortcodes(in: String(text[range])
                 .replacingOccurrences(of: "<summary>", with: "", options: .caseInsensitive)
                 .replacingOccurrences(of: "</summary>", with: "", options: .caseInsensitive)
                 .replacingOccurrences(of: "<blockquote>", with: "", options: .caseInsensitive)
                 .replacingOccurrences(of: "</blockquote>", with: "", options: .caseInsensitive)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .trimmingCharacters(in: .whitespacesAndNewlines))
             text.removeSubrange(range)
         }
 
@@ -221,18 +284,34 @@ enum MarkdownBlock: Equatable {
         return .table(header: header, rows: Array(rows.dropFirst()))
     }
 
-    /// `| --- | :--: |` and the compact `|-|-|` form.
+    /// `| --- | :--: |`, `--- | :---:`, and the compact `|-|-|` form.
     private static func isTableSeparator(_ line: String) -> Bool {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        guard trimmed.hasPrefix("|"), trimmed.contains("-") else { return false }
-        return trimmed.allSatisfy { "|-: \t".contains($0) }
+        let cells = tableCells(line)
+        guard cells.count > 1 else { return false }
+        return cells.allSatisfy { cell in
+            cell.contains("-") && cell.allSatisfy { "-: \t".contains($0) }
+        }
     }
 
     private static func tableCells(_ line: String) -> [String] {
         var content = line
         if content.hasPrefix("|") { content.removeFirst() }
         if content.hasSuffix("|") { content.removeLast() }
-        return content.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+        return content.components(separatedBy: "|").map {
+            tableCellText($0.trimmingCharacters(in: .whitespaces))
+        }
+    }
+
+    private static func tableCellText(_ text: String) -> String {
+        emojiShortcodes(in: text
+            .replacingOccurrences(of: #"(?i)<br\s*/?>"#, with: "\n", options: .regularExpression)
+            .replacingOccurrences(of: #"(?is)<[^>]+>"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'"))
     }
 
     private static func regexMatches(_ pattern: String, in text: String) -> [String] {
@@ -245,7 +324,8 @@ enum MarkdownBlock: Equatable {
     }
 
     private static func plainHTMLText(_ html: String) -> String {
-        html
+        emojiShortcodes(in: html
+            .replacingOccurrences(of: #"(?is)<!--.*?-->"#, with: "", options: .regularExpression)
             .replacingOccurrences(of: #"(?i)<br\s*/?>"#, with: "\n", options: .regularExpression)
             .replacingOccurrences(of: #"(?is)<[^>]+>"#, with: "", options: .regularExpression)
             .replacingOccurrences(of: "&nbsp;", with: " ")
@@ -257,7 +337,23 @@ enum MarkdownBlock: Equatable {
             .components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }
             .joined(separator: " ")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    private static func stripInlineHTMLComments(_ text: String) -> String {
+        text.replacingOccurrences(of: #"(?is)<!--.*?-->"#, with: "", options: .regularExpression)
+    }
+
+    private static func emojiShortcodes(in text: String) -> String {
+        text
+            .replacingOccurrences(of: ":tada:", with: "🎉")
+            .replacingOccurrences(of: ":smiley:", with: "😃")
+            .replacingOccurrences(of: ":warning:", with: "⚠️")
+            .replacingOccurrences(of: ":no_entry_sign:", with: "🚫")
+            .replacingOccurrences(of: ":white_check_mark:", with: "✅")
+            .replacingOccurrences(of: ":x:", with: "❌")
+            .replacingOccurrences(of: ":rocket:", with: "🚀")
+            .replacingOccurrences(of: ":eyes:", with: "👀")
     }
 
     private static func headingLevel(of line: String) -> (level: Int, text: String)? {
@@ -277,6 +373,19 @@ enum MarkdownBlock: Equatable {
            !line[line.startIndex..<dot].isEmpty,
            line[line.index(after: dot)...].hasPrefix(" ") {
             return String(line[line.index(dot, offsetBy: 2)...])
+        }
+        return nil
+    }
+
+    private static func taskItem(of line: String) -> (checked: Bool, text: String)? {
+        for marker in ["- ", "* ", "+ "] where line.hasPrefix(marker) {
+            let item = String(line.dropFirst(marker.count)).trimmingCharacters(in: .whitespaces)
+            if item.hasPrefix("[ ] ") {
+                return (false, String(item.dropFirst(4)).trimmingCharacters(in: .whitespaces))
+            }
+            if item.hasPrefix("[x] ") || item.hasPrefix("[X] ") {
+                return (true, String(item.dropFirst(4)).trimmingCharacters(in: .whitespaces))
+            }
         }
         return nil
     }

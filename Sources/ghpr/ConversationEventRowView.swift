@@ -8,7 +8,7 @@ struct ConversationEventRowView: View {
     let event: GithubTimelineEvent
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .center, spacing: 6) {
             Image(systemName: icon)
                 .font(.callout)
                 .foregroundStyle(iconColor)

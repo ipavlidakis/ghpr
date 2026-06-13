@@ -19,7 +19,7 @@ struct ConversationHeaderView: View {
     }
 
     private var titleRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .center, spacing: 6) {
             Text(pullRequest.title)
                 .font(.title2.weight(.semibold))
                 .lineLimit(2)

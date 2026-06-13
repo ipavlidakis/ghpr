@@ -38,4 +38,18 @@ package enum GithubReactionContent: String, Sendable, CaseIterable {
         case .eyes: "eyes"
         }
     }
+
+    package init?(restValue: String) {
+        switch restValue {
+        case "+1": self = .thumbsUp
+        case "-1": self = .thumbsDown
+        case "laugh": self = .laugh
+        case "hooray": self = .hooray
+        case "confused": self = .confused
+        case "heart": self = .heart
+        case "rocket": self = .rocket
+        case "eyes": self = .eyes
+        default: return nil
+        }
+    }
 }

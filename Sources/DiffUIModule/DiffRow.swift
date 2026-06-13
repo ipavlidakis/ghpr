@@ -11,7 +11,7 @@ enum DiffRow: Identifiable {
     /// Caller-provided content (review threads) pinned under a line.
     case annotation(index: Int, anchor: DiffFileAnchor)
     /// Caller-provided content replacing a file's body (image comparisons).
-    case filePreview(index: Int, path: String)
+    case filePreview(index: Int, file: FileDiff)
 
     var id: Int {
         switch self {
@@ -30,7 +30,7 @@ enum DiffRow: Identifiable {
         case .hunkHeader: nil
         case .line(_, let file, _, _, _): file
         case .annotation(_, let anchor): anchor.path
-        case .filePreview(_, let path): path
+        case .filePreview(_, let file): file.path
         }
     }
 
@@ -79,7 +79,7 @@ enum DiffRow: Identifiable {
         to rows: inout [DiffRow]
     ) {
         if previewPaths.contains(fileDiff.path) {
-            rows.append(.filePreview(index: rows.count, path: fileDiff.path))
+            rows.append(.filePreview(index: rows.count, file: fileDiff))
             return
         }
         for (hunkIndex, hunk) in fileDiff.hunks.enumerated() {

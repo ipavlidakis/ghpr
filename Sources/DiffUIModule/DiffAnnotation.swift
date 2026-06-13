@@ -10,9 +10,11 @@ import SwiftUI
 package struct DiffAnnotation {
     package let version: Int
     package let content: AnyView
+    package let fixedHeight: CGFloat?
 
-    package init(version: Int, content: AnyView) {
+    package init(version: Int, fixedHeight: CGFloat? = nil, content: AnyView) {
         self.version = version
+        self.fixedHeight = fixedHeight
         self.content = content
     }
 }

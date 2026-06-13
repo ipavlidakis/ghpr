@@ -24,7 +24,7 @@ struct ConversationReviewView: View {
                     .foregroundStyle(.secondary)
             }
             if !review.body.isEmpty {
-                MarkdownView(text: review.body)
+                DeferredMarkdownView(text: review.body)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .modifier(ReviewSurface())

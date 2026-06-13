@@ -9,16 +9,12 @@ struct ReviewCommentView: View {
     let isPullRequestAuthor: Bool
     let onReact: (GithubReactionContent) -> Void
 
-    @State private var isReactionPickerShown = false
-
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             avatar
             VStack(alignment: .leading, spacing: 4) {
                 header
-                Text(AttributedString(githubMarkdown: comment.body))
-                    .font(.callout)
-                    .textSelection(.enabled)
+                DeferredMarkdownView(text: comment.body)
                 reactionsRow
             }
         }
@@ -68,36 +64,6 @@ struct ReviewCommentView: View {
     }
 
     private var reactionsRow: some View {
-        HStack(spacing: 6) {
-            ForEach(comment.reactions, id: \.content) { reaction in
-                Text("\(reaction.content.emoji) \(reaction.count)")
-                    .font(.caption)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 2)
-                    .background(.background.tertiary, in: .capsule)
-            }
-            // A Menu misfires inside hosted table cells; a popover is reliable.
-            Button {
-                isReactionPickerShown = true
-            } label: {
-                Image(systemName: "face.smiling")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .popover(isPresented: $isReactionPickerShown, arrowEdge: .bottom) {
-                HStack(spacing: 4) {
-                    ForEach(GithubReactionContent.allCases, id: \.self) { reaction in
-                        Button(reaction.emoji) {
-                            isReactionPickerShown = false
-                            onReact(reaction)
-                        }
-                        .buttonStyle(.plain)
-                        .font(.title3)
-                    }
-                }
-                .padding(8)
-            }
-        }
+        ReactionBarView(reactions: comment.reactions, onReact: onReact)
     }
 }

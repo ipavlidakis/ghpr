@@ -23,11 +23,11 @@ final class DiffTableRowView: NSTableRowView {
         super.drawBackground(in: dirtyRect)
         if let tint {
             tint.setFill()
-            dirtyRect.fill(using: .sourceOver)
+            bounds.fill(using: .sourceOver)
         }
         if isInSelectedRange {
             NSColor.selectedContentBackgroundColor.withAlphaComponent(0.35).setFill()
-            dirtyRect.fill(using: .sourceOver)
+            bounds.fill(using: .sourceOver)
         }
     }
 }

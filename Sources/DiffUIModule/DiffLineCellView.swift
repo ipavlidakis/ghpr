@@ -19,6 +19,8 @@ final class DiffLineCellView: NSView {
         addSubview(textField)
 
         addCommentButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: "Add comment")
+        addCommentButton.setAccessibilityIdentifier("ghpr.files.line.add-comment")
+        addCommentButton.setAccessibilityLabel("Add line comment")
         addCommentButton.isBordered = false
         addCommentButton.contentTintColor = .white
         addCommentButton.wantsLayer = true

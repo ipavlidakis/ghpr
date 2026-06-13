@@ -15,10 +15,12 @@ final class ReviewModel {
     var errorMessage: String?
 
     private let client: GithubClient
+    private let writesAreMocked: Bool
 
-    init(data: ReviewData, client: GithubClient) {
+    init(data: ReviewData, client: GithubClient, writesAreMocked: Bool = false) {
         self.data = data
         self.client = client
+        self.writesAreMocked = writesAreMocked
     }
 
     // MARK: Pending batch
@@ -33,6 +35,10 @@ final class ReviewModel {
 
     /// Submits the verdict, summary, and all pending comments as one review.
     func submitReview(event: GithubReviewEvent, body: String) async {
+        if writesAreMocked {
+            pendingComments.removeAll()
+            return
+        }
         await perform {
             try await self.client.submitReview(
                 in: self.data.reference.repository,
@@ -49,6 +55,10 @@ final class ReviewModel {
 
     /// Posts one comment right away, outside any batch.
     func addSingleComment(path: String, anchor: DiffLineAnchor, body: String) async {
+        if writesAreMocked {
+            addPendingComment(path: path, anchor: anchor, body: body)
+            return
+        }
         await perform {
             try await self.client.addComment(
                 in: self.data.reference.repository,
@@ -60,6 +70,9 @@ final class ReviewModel {
     }
 
     func reply(to thread: GithubReviewThread, body: String) async {
+        if writesAreMocked {
+            return
+        }
         guard let commentId = thread.comments.first?.databaseId else {
             errorMessage = "This thread cannot be replied to."
             return
@@ -75,24 +88,33 @@ final class ReviewModel {
     }
 
     func resolve(thread: GithubReviewThread) async {
+        if writesAreMocked {
+            return
+        }
         await perform {
             try await self.client.resolveThread(id: thread.id)
         }
     }
 
     func unresolve(thread: GithubReviewThread) async {
+        if writesAreMocked {
+            return
+        }
         await perform {
             try await self.client.unresolveThread(id: thread.id)
         }
     }
 
     func react(to comment: GithubReviewComment, with reaction: GithubReactionContent) async {
+        if writesAreMocked {
+            return
+        }
         guard let commentId = comment.databaseId else {
             errorMessage = "This comment cannot be reacted to."
             return
         }
         await perform {
-            try await self.client.addReaction(
+            try await self.client.toggleReaction(
                 in: self.data.reference.repository,
                 commentId: commentId,
                 reaction: reaction
@@ -101,8 +123,11 @@ final class ReviewModel {
     }
 
     func react(toIssueComment comment: GithubIssueComment, with reaction: GithubReactionContent) async {
+        if writesAreMocked {
+            return
+        }
         await perform {
-            try await self.client.addIssueCommentReaction(
+            try await self.client.toggleIssueCommentReaction(
                 in: self.data.reference.repository,
                 commentId: comment.databaseId,
                 reaction: reaction

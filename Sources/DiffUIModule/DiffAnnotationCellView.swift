@@ -8,6 +8,7 @@ import SwiftUI
 /// own hosting view and reports the height for the current table width.
 final class DiffAnnotationCellView: NSView {
     private let hostingView: NSHostingView<AnyView>
+    private var measuredHeights: [Int: CGFloat] = [:]
 
     init(content: AnyView) {
         hostingView = NSHostingView(rootView: content)
@@ -29,7 +30,13 @@ final class DiffAnnotationCellView: NSView {
 
     /// The content's ideal height when laid out at the given width.
     func height(forWidth width: CGFloat) -> CGFloat {
+        let widthKey = max(1, Int(width.rounded(.toNearestOrAwayFromZero)))
+        if let measuredHeight = measuredHeights[widthKey] {
+            return measuredHeight
+        }
         hostingView.frame.size.width = width
-        return hostingView.fittingSize.height
+        let measuredHeight = hostingView.fittingSize.height
+        measuredHeights[widthKey] = measuredHeight
+        return measuredHeight
     }
 }

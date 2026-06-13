@@ -2,16 +2,16 @@ import Foundation
 
 /// Async client for the GitHub REST and GraphQL APIs (read path).
 package actor GithubClient {
-    private let token: String
+    private let token: String?
     private let transport: any HTTPTransport
     private let apiBaseURL: URL
 
     package init(
-        token: String,
+        token: String?,
         transport: any HTTPTransport = URLSessionTransport(),
         apiBaseURL: URL = URL(string: "https://api.github.com")!
     ) {
-        self.token = token
+        self.token = token?.isEmpty == false ? token : nil
         self.transport = transport
         self.apiBaseURL = apiBaseURL
     }
@@ -45,8 +45,12 @@ package actor GithubClient {
 
     /// The unified diff of a pull request.
     package func diff(in repository: GithubRepository, number: Int) async throws -> String {
-        let (data, _) = try await send(request(path: "repos/\(repository.fullName)/pulls/\(number)", accept: "application/vnd.github.diff"))
-        return String(decoding: data, as: UTF8.self)
+        do {
+            let (data, _) = try await send(request(path: "repos/\(repository.fullName)/pulls/\(number)", accept: "application/vnd.github.diff"))
+            return String(decoding: data, as: UTF8.self)
+        } catch let error as GithubAPIError where error.statusCode == 406 {
+            return try await pullRequestFilesDiff(in: repository, number: number)
+        }
     }
 
     package func commits(in repository: GithubRepository, number: Int) async throws -> [GithubCommit] {
@@ -91,7 +95,11 @@ package actor GithubClient {
             path: "repos/\(repository.fullName)/issues/\(number)/timeline",
             query: []
         )
-        return items.filter { $0 != .unknown }
+        return items
+            .filter { $0 != .unknown }
+            .sorted {
+                ($0.chronologicalDate ?? .distantPast) < ($1.chronologicalDate ?? .distantPast)
+            }
     }
 
     // MARK: Review threads
@@ -179,6 +187,24 @@ package actor GithubClient {
         )
     }
 
+    /// Toggles this token user's reaction on an inline comment.
+    package func toggleReaction(
+        in repository: GithubRepository,
+        commentId: Int,
+        reaction: GithubReactionContent
+    ) async throws {
+        let login = try await authenticatedUser().login
+        if let existing = try await existingReaction(
+            path: "repos/\(repository.fullName)/pulls/comments/\(commentId)/reactions",
+            content: reaction,
+            userLogin: login
+        ) {
+            try await deleteReaction(in: repository, reactionId: existing.id)
+        } else {
+            try await addReaction(in: repository, commentId: commentId, reaction: reaction)
+        }
+    }
+
     /// Adds an emoji reaction to a conversation (issue) comment.
     package func addIssueCommentReaction(
         in repository: GithubRepository,
@@ -192,6 +218,24 @@ package actor GithubClient {
             path: "repos/\(repository.fullName)/issues/comments/\(commentId)/reactions",
             payload: Payload(content: reaction.restValue)
         )
+    }
+
+    /// Toggles this token user's reaction on a conversation (issue) comment.
+    package func toggleIssueCommentReaction(
+        in repository: GithubRepository,
+        commentId: Int,
+        reaction: GithubReactionContent
+    ) async throws {
+        let login = try await authenticatedUser().login
+        if let existing = try await existingReaction(
+            path: "repos/\(repository.fullName)/issues/comments/\(commentId)/reactions",
+            content: reaction,
+            userLogin: login
+        ) {
+            try await deleteReaction(in: repository, reactionId: existing.id)
+        } else {
+            try await addIssueCommentReaction(in: repository, commentId: commentId, reaction: reaction)
+        }
     }
 
     /// Marks a review thread as resolved.
@@ -238,7 +282,9 @@ package actor GithubClient {
         // GitHub serves max-age=60; a cached GET would show stale data on
         // the reload right after a write (e.g. a just-added reaction).
         request.cachePolicy = .reloadIgnoringLocalCacheData
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.setValue(accept, forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
         request.setValue("ghpr", forHTTPHeaderField: "User-Agent")
@@ -261,6 +307,31 @@ package actor GithubClient {
         request.httpMethod = "POST"
         request.httpBody = try JSONEncoder.github.encode(payload)
         _ = try await send(request)
+    }
+
+    private func pullRequestFilesDiff(in repository: GithubRepository, number: Int) async throws -> String {
+        let files: [GithubPullRequestFile] = try await pages(
+            path: "repos/\(repository.fullName)/pulls/\(number)/files",
+            query: []
+        )
+        return files.map(\.unifiedDiffSection).joined(separator: "\n")
+    }
+
+    private func existingReaction(path: String, content: GithubReactionContent, userLogin: String) async throws -> GithubCommentReaction? {
+        let reactions: [GithubCommentReaction] = try await pages(path: path, query: [])
+        return reactions.first { $0.content == content && $0.user.login == userLogin }
+    }
+
+    private func deleteReaction(in repository: GithubRepository, reactionId: Int) async throws {
+        var request = request(path: "repos/\(repository.fullName)/reactions/\(reactionId)")
+        request.httpMethod = "DELETE"
+        let (data, response) = try await transport.send(request)
+        if response.statusCode == 404 {
+            return
+        }
+        guard (200..<300).contains(response.statusCode) else {
+            throw GithubAPIError(statusCode: response.statusCode, message: Self.errorMessage(from: data))
+        }
     }
 
     private func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {

@@ -8,12 +8,18 @@ package struct FileDiff: Sendable, Equatable {
     package let status: FileDiffStatus
     package let hunks: [DiffHunk]
     package let isBinary: Bool
+    private let additionCount: Int
+    private let deletionCount: Int
+    private let renderedLineCount: Int
 
     package init(path: String, status: FileDiffStatus, hunks: [DiffHunk], isBinary: Bool = false) {
         self.path = path
         self.status = status
         self.hunks = hunks
         self.isBinary = isBinary
+        additionCount = hunks.reduce(0) { $0 + $1.lines.count(where: { $0.kind == .addition }) }
+        deletionCount = hunks.reduce(0) { $0 + $1.lines.count(where: { $0.kind == .deletion }) }
+        renderedLineCount = hunks.reduce(0) { $0 + $1.lines.count }
     }
 
     /// Lowercased file extension, used to pick a syntax highlighting grammar.
@@ -23,10 +29,14 @@ package struct FileDiff: Sendable, Equatable {
     }
 
     package var additions: Int {
-        hunks.reduce(0) { $0 + $1.lines.count(where: { $0.kind == .addition }) }
+        additionCount
     }
 
     package var deletions: Int {
-        hunks.reduce(0) { $0 + $1.lines.count(where: { $0.kind == .deletion }) }
+        deletionCount
+    }
+
+    package var renderedLines: Int {
+        renderedLineCount
     }
 }

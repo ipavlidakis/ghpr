@@ -18,6 +18,10 @@ package struct FileTreeNode: Identifiable {
     /// alphabetically) — the order the diff should render in so the sidebar
     /// and the scroll stream agree.
     package static func orderedPaths(from items: [FileListItem]) -> [String] {
+        orderedPaths(from: tree(from: items))
+    }
+
+    package static func orderedPaths(from tree: [FileTreeNode]) -> [String] {
         var paths: [String] = []
         func walk(_ nodes: [FileTreeNode]) {
             for node in nodes {
@@ -29,11 +33,11 @@ package struct FileTreeNode: Identifiable {
                 }
             }
         }
-        walk(tree(from: items))
+        walk(tree)
         return paths
     }
 
-    static func tree(from items: [FileListItem]) -> [FileTreeNode] {
+    package static func tree(from items: [FileListItem]) -> [FileTreeNode] {
         final class Directory {
             var directories: [String: Directory] = [:]
             var files: [FileListItem] = []

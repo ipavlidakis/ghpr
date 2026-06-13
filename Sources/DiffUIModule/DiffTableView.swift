@@ -26,6 +26,7 @@ struct DiffTableView: NSViewRepresentable {
     var onLineClick: ((String, DiffLine) -> Void)?
     var onFileHeaderClick: ((String) -> Void)?
     var onViewedToggle: ((String, Bool) -> Void)?
+    var onLoadPreview: ((String) -> Void)?
     var onExpandFile: ((String) -> Void)?
     var expandedFiles: Set<String> = []
     var fileActions: [DiffFileAction] = []
@@ -38,6 +39,9 @@ struct DiffTableView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSScrollView {
         let tableView = DiffNSTableView()
+        tableView.setAccessibilityElement(true)
+        tableView.setAccessibilityIdentifier("ghpr.files.diff.table")
+        tableView.setAccessibilityLabel("Changed files diff")
         tableView.addTableColumn(NSTableColumn(identifier: Coordinator.columnIdentifier))
         tableView.headerView = nil
         tableView.rowHeight = DiffStyle.rowHeight
@@ -78,6 +82,9 @@ struct DiffTableView: NSViewRepresentable {
         }
 
         let scrollView = NSScrollView()
+        scrollView.setAccessibilityElement(true)
+        scrollView.setAccessibilityIdentifier("ghpr.files.diff.scroll")
+        scrollView.setAccessibilityLabel("Changed files diff scroll area")
         scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
         scrollView.drawsBackground = false
@@ -103,6 +110,8 @@ struct DiffTableView: NSViewRepresentable {
         private var annotationCells: [DiffFileAnchor: DiffAnnotationCellView] = [:]
         private var previewCells: [String: DiffAnnotationCellView] = [:]
         private var lastReportedFile: String?
+        private var pendingVisibleFile: String?
+        private var visibleFileReportTask: Task<Void, Never>?
         private var lastScrollToken: UUID?
         private var lastReloadFingerprint: Int?
         private weak var hoveredCell: DiffLineCellView?
@@ -111,6 +120,11 @@ struct DiffTableView: NSViewRepresentable {
         private var selectedRowRange: ClosedRange<Int>?
 
         private var rows: [DiffRow] { view?.rows ?? [] }
+
+        deinit {
+            visibleFileReportTask?.cancel()
+            NotificationCenter.default.removeObserver(self)
+        }
 
         // MARK: Updates
 
@@ -239,7 +253,7 @@ struct DiffTableView: NSViewRepresentable {
 
         private func reportVisibleFile(in scrollView: NSScrollView) {
             guard
-                let onVisibleFileChange = view?.onVisibleFileChange,
+                view?.onVisibleFileChange != nil,
                 let tableView = scrollView.documentView as? NSTableView
             else { return }
 
@@ -258,8 +272,25 @@ struct DiffTableView: NSViewRepresentable {
             }
 
             guard let path, path != lastReportedFile else { return }
+            scheduleVisibleFileReport(path)
+        }
+
+        private func scheduleVisibleFileReport(_ path: String) {
+            guard path != lastReportedFile, path != pendingVisibleFile else { return }
+            pendingVisibleFile = path
+            visibleFileReportTask?.cancel()
+            visibleFileReportTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(350))
+                guard !Task.isCancelled else { return }
+                self?.commitVisibleFile(path)
+            }
+        }
+
+        private func commitVisibleFile(_ path: String) {
+            pendingVisibleFile = nil
+            guard path != lastReportedFile else { return }
             lastReportedFile = path
-            onVisibleFileChange(path)
+            view?.onVisibleFileChange?(path)
         }
 
         /// j/k navigation: pins the next or previous file header to the top.
@@ -290,6 +321,8 @@ struct DiffTableView: NSViewRepresentable {
             else { return }
 
             // Pin the file header to the top of the viewport.
+            visibleFileReportTask?.cancel()
+            pendingVisibleFile = nil
             lastReportedFile = path
             let rect = tableView.rect(ofRow: index)
             scrollView.contentView.scroll(to: NSPoint(x: 0, y: rect.minY))
@@ -318,13 +351,20 @@ struct DiffTableView: NSViewRepresentable {
         func tableView(_ tableView: NSTableView, heightOfRow index: Int) -> CGFloat {
             switch rows[index] {
             case .fileHeader:
-                38
+                return 46
             case .hunkHeader, .line:
-                DiffStyle.rowHeight
+                return DiffStyle.rowHeight
             case .annotation(_, let anchor):
-                annotationCell(for: anchor).map { $0.height(forWidth: tableView.bounds.width) + 8 } ?? 0
-            case .filePreview(_, let path):
-                previewCell(for: path).map { $0.height(forWidth: tableView.bounds.width) } ?? 0
+                if let fixedHeight = view?.annotations[anchor]?.fixedHeight {
+                    return fixedHeight
+                }
+                return annotationCell(for: anchor).map { $0.height(forWidth: tableView.bounds.width) + 8 } ?? 0
+            case .filePreview(_, let file):
+                let path = file.path
+                if let fixedHeight = view?.filePreviews[path]?.fixedHeight {
+                    return fixedHeight
+                }
+                return previewCell(for: path).map { $0.height(forWidth: tableView.bounds.width) } ?? 0
             }
         }
 
@@ -340,6 +380,9 @@ struct DiffTableView: NSViewRepresentable {
                 }
                 cell.onViewedToggle = { [weak self] isViewed in
                     self?.view?.onViewedToggle?(file.path, isViewed)
+                }
+                cell.onCollapseToggle = { [weak self] in
+                    self?.view?.onFileHeaderClick?(file.path)
                 }
                 // Nothing left to expand: already expanded, or the diff
                 // necessarily shows the whole file.
@@ -377,7 +420,22 @@ struct DiffTableView: NSViewRepresentable {
                 return cell
             case .annotation(_, let anchor):
                 return annotationCell(for: anchor)
-            case .filePreview(_, let path):
+            case .filePreview(_, let file):
+                if view?.filePreviews[file.path]?.fixedHeight != nil {
+                    let cell: LargeDiffPlaceholderCellView
+                    if let recycled = tableView.makeView(withIdentifier: LargeDiffPlaceholderCellView.identifier, owner: nil) as? LargeDiffPlaceholderCellView {
+                        cell = recycled
+                    } else {
+                        cell = LargeDiffPlaceholderCellView()
+                        cell.identifier = LargeDiffPlaceholderCellView.identifier
+                    }
+                    cell.onLoad = { [weak self] in
+                        self?.view?.onLoadPreview?(file.path)
+                    }
+                    cell.configure(with: file)
+                    return cell
+                }
+                let path = file.path
                 return previewCell(for: path)
             }
         }

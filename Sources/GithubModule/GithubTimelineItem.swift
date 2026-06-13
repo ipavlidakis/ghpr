@@ -10,6 +10,21 @@ package enum GithubTimelineItem: Sendable, Equatable, Decodable {
     case event(GithubTimelineEvent)
     case unknown
 
+    package var chronologicalDate: Date? {
+        switch self {
+        case .comment(let comment):
+            comment.createdAt
+        case .review(let review):
+            review.submittedAt
+        case .commit(let commit):
+            commit.date
+        case .event(let event):
+            event.createdAt
+        case .unknown:
+            nil
+        }
+    }
+
     package init(from decoder: any Decoder) throws {
         guard let raw = try? Raw(from: decoder) else {
             self = .unknown

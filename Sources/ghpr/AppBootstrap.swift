@@ -38,6 +38,7 @@ enum AppBootstrap {
             defer: false
         )
         window.title = title
+        window.identifier = NSUserInterfaceItemIdentifier("ghpr.window")
         window.isReleasedWhenClosed = false
         window.contentViewController = hostingController
         window.minSize = NSSize(width: min(size.width, 960), height: min(size.height, 600))

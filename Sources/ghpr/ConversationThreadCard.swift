@@ -40,6 +40,8 @@ struct ConversationThreadCard: View {
                 Divider()
                 if let hunk = thread.comments.first?.diffHunk, !hunk.isEmpty {
                     DiffExcerptView(hunk: hunk)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
                     Divider()
                 }
                 comments

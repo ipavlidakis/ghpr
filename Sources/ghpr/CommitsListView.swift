@@ -20,6 +20,8 @@ struct CommitsListView: View {
                 }
                 .listStyle(.inset)
                 .frame(maxWidth: 760)
+                .accessibilityIdentifier("ghpr.commits.list")
+                .accessibilityLabel("Commits")
             }
         }
         .frame(maxWidth: .infinity)

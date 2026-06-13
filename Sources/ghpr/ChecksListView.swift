@@ -20,6 +20,8 @@ struct ChecksListView: View {
                 }
                 .listStyle(.inset)
                 .frame(maxWidth: 760)
+                .accessibilityIdentifier("ghpr.checks.list")
+                .accessibilityLabel("Checks")
             }
         }
         .frame(maxWidth: .infinity)

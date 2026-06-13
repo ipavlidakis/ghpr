@@ -1,22 +1,16 @@
 import AppKit
 import Foundation
+import SwiftUI
 
-/// Native table cell for a file's header row in the multi-file table:
-/// collapse chevron, status letter, path, change counts, and the
-/// GitHub-style "Viewed" checkbox that collapses the file when checked.
+/// Native table cell shell for a SwiftUI file header row.
 final class DiffFileHeaderCellView: NSView {
-    private let topSeparator = NSBox()
-    private let bottomSeparator = NSBox()
-    private let textField = NSTextField(labelWithString: "")
-    private let copyButton = NSButton()
-    private let expandButton = NSButton()
-    private let menuButton = NSButton()
-    private let viewedCheckbox = NSButton(checkboxWithTitle: "Viewed", target: nil, action: nil)
-
+    private var hostingView: NSHostingView<AnyView>?
     private var filePath = ""
 
     /// Called with the new checked state when the user toggles "Viewed".
     var onViewedToggle: ((Bool) -> Void)?
+    /// Called when the collapse affordance is clicked.
+    var onCollapseToggle: (() -> Void)?
     /// Expand-all-lines (full file context); the button only shows when set.
     var onExpand: (() -> Void)?
     /// Entries of the "…" menu.
@@ -24,51 +18,6 @@ final class DiffFileHeaderCellView: NSView {
 
     override init(frame: NSRect) {
         super.init(frame: frame)
-        configureSeparator(topSeparator)
-        configureSeparator(bottomSeparator)
-
-        // Single line via maximumNumberOfLines, not usesSingleLineMode —
-        // the latter silently replaces middle truncation with tail clipping.
-        textField.lineBreakMode = .byTruncatingMiddle
-        textField.maximumNumberOfLines = 1
-        // Truncate the path rather than pushing the trailing controls out.
-        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(textField)
-
-        configureIconButton(copyButton, symbol: "doc.on.doc", help: "Copy file name", action: #selector(copyPath))
-        configureIconButton(expandButton, symbol: "rectangle.expand.vertical", help: "Expand all lines", action: #selector(expandTapped))
-        configureIconButton(menuButton, symbol: "ellipsis", help: "More actions", action: #selector(menuTapped(_:)))
-
-        viewedCheckbox.font = NSFont.systemFont(ofSize: 11)
-        viewedCheckbox.controlSize = .small
-        viewedCheckbox.target = self
-        viewedCheckbox.action = #selector(viewedToggled(_:))
-        viewedCheckbox.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(viewedCheckbox)
-
-        NSLayoutConstraint.activate([
-            topSeparator.leadingAnchor.constraint(equalTo: leadingAnchor),
-            topSeparator.trailingAnchor.constraint(equalTo: trailingAnchor),
-            topSeparator.topAnchor.constraint(equalTo: topAnchor),
-            topSeparator.heightAnchor.constraint(equalToConstant: 1),
-            bottomSeparator.leadingAnchor.constraint(equalTo: leadingAnchor),
-            bottomSeparator.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bottomSeparator.bottomAnchor.constraint(equalTo: bottomAnchor),
-            bottomSeparator.heightAnchor.constraint(equalToConstant: 1),
-            textField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            textField.centerYAnchor.constraint(equalTo: centerYAnchor),
-            copyButton.leadingAnchor.constraint(equalTo: textField.trailingAnchor, constant: 8),
-            copyButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            expandButton.leadingAnchor.constraint(equalTo: copyButton.trailingAnchor, constant: 6),
-            expandButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            viewedCheckbox.leadingAnchor.constraint(greaterThanOrEqualTo: expandButton.trailingAnchor, constant: 12),
-            // Clear of the overlay scroller at the table's trailing edge.
-            menuButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -28),
-            menuButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            viewedCheckbox.trailingAnchor.constraint(equalTo: menuButton.leadingAnchor, constant: -10),
-            viewedCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor)
-        ])
     }
 
     @available(*, unavailable)
@@ -76,37 +25,46 @@ final class DiffFileHeaderCellView: NSView {
         fatalError("not used")
     }
 
-    private func configureIconButton(_ button: NSButton, symbol: String, help: String, action: Selector) {
-        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: help)
-        button.isBordered = false
-        button.contentTintColor = .secondaryLabelColor
-        button.toolTip = help
-        button.target = self
-        button.action = action
-        button.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(button)
+    func configure(with file: FileDiff, isCollapsed: Bool, isViewed: Bool) {
+        filePath = file.path
+        setAccessibilityIdentifier("ghpr.files.header.row")
+        setAccessibilityLabel("File \(file.path)")
+        setAccessibilityValue("\(file.status.accessibilityDescription), \(file.additions) additions, \(file.deletions) deletions")
+        let content = DiffFileHeaderRowView(
+            file: file,
+            isCollapsed: isCollapsed,
+            isViewed: isViewed,
+            isExpandable: onExpand != nil,
+            hasActions: !fileActions.isEmpty,
+            onCollapse: { [weak self] in self?.onCollapseToggle?() },
+            onViewedToggle: { [weak self] isViewed in self?.onViewedToggle?(isViewed) },
+            onCopy: { [weak self] in self?.copyPath() },
+            onExpand: { [weak self] in self?.onExpand?() },
+            onMore: { [weak self] in self?.showActionsMenu() }
+        )
+
+        if let hostingView {
+            hostingView.rootView = AnyView(content)
+        } else {
+            let hostingView = NSHostingView(rootView: AnyView(content))
+            hostingView.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(hostingView)
+            NSLayoutConstraint.activate([
+                hostingView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                hostingView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                hostingView.topAnchor.constraint(equalTo: topAnchor),
+                hostingView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            ])
+            self.hostingView = hostingView
+        }
     }
 
-    private func configureSeparator(_ separator: NSBox) {
-        separator.boxType = .separator
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(separator)
-    }
-
-    @objc private func viewedToggled(_ sender: NSButton) {
-        onViewedToggle?(sender.state == .on)
-    }
-
-    @objc private func copyPath() {
+    private func copyPath() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(filePath, forType: .string)
     }
 
-    @objc private func expandTapped() {
-        onExpand?()
-    }
-
-    @objc private func menuTapped(_ sender: NSButton) {
+    private func showActionsMenu() {
         guard !fileActions.isEmpty else { return }
         let menu = NSMenu()
         for action in fileActions {
@@ -115,73 +73,11 @@ final class DiffFileHeaderCellView: NSView {
             item.representedObject = action
             menu.addItem(item)
         }
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.maxY + 4), in: sender)
+        menu.popUp(positioning: nil, at: NSPoint(x: bounds.maxX - 44, y: bounds.midY + 8), in: self)
     }
 
     @objc private func menuItemSelected(_ item: NSMenuItem) {
         guard let action = item.representedObject as? DiffFileAction else { return }
         action.handler(filePath)
-    }
-
-    func configure(with file: FileDiff, isCollapsed: Bool, isViewed: Bool) {
-        filePath = file.path
-        viewedCheckbox.state = isViewed ? .on : .off
-        expandButton.isHidden = onExpand == nil
-        menuButton.isHidden = fileActions.isEmpty
-
-        let text = NSMutableAttributedString()
-
-        text.append(NSAttributedString(
-            string: isCollapsed ? "▸  " : "▾  ",
-            attributes: [.font: NSFont.systemFont(ofSize: 14, weight: .medium), .foregroundColor: NSColor.secondaryLabelColor]
-        ))
-        text.append(NSAttributedString(
-            string: "\(statusLetter(for: file.status)) ",
-            attributes: [.font: NSFont.boldSystemFont(ofSize: 11), .foregroundColor: statusColor(for: file.status)]
-        ))
-        text.append(NSAttributedString(
-            string: title(for: file),
-            attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .semibold), .foregroundColor: NSColor.labelColor]
-        ))
-        if file.additions > 0 {
-            text.append(NSAttributedString(
-                string: "  +\(file.additions)",
-                attributes: [.font: DiffStyle.codeFont, .foregroundColor: NSColor.systemGreen]
-            ))
-        }
-        if file.deletions > 0 {
-            text.append(NSAttributedString(
-                string: "  −\(file.deletions)",
-                attributes: [.font: DiffStyle.codeFont, .foregroundColor: NSColor.systemRed]
-            ))
-        }
-
-        textField.attributedStringValue = text
-    }
-
-    private func title(for file: FileDiff) -> String {
-        if case .renamed(let from) = file.status {
-            "\(from) → \(file.path)"
-        } else {
-            file.path
-        }
-    }
-
-    private func statusLetter(for status: FileDiffStatus) -> String {
-        switch status {
-        case .added: "A"
-        case .deleted: "D"
-        case .modified: "M"
-        case .renamed: "R"
-        }
-    }
-
-    private func statusColor(for status: FileDiffStatus) -> NSColor {
-        switch status {
-        case .added: .systemGreen
-        case .deleted: .systemRed
-        case .modified: .systemOrange
-        case .renamed: .systemBlue
-        }
     }
 }

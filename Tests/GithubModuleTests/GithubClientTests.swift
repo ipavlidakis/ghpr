@@ -92,6 +92,43 @@ struct GithubClientTests {
         #expect(request.value(forHTTPHeaderField: "Accept") == "application/vnd.github.diff")
     }
 
+    @Test("diff falls back to pull request files when GitHub refuses large diffs")
+    func diffFilesFallback() async throws {
+        let files = Data(#"""
+        [
+          {
+            "filename": "Sources/New.swift",
+            "status": "added",
+            "patch": "@@ -0,0 +1,1 @@\n+let value = 1"
+          },
+          {
+            "filename": "Sources/Renamed.swift",
+            "previous_filename": "Sources/Old.swift",
+            "status": "renamed",
+            "patch": "@@ -1,1 +1,1 @@\n-old\n+new"
+          }
+        ]
+        """#.utf8)
+        let transport = StubTransport(stubs: [
+            .init(
+                data: Data(#"{"message":"Sorry, the diff exceeded the maximum number of files (300)."}"#.utf8),
+                statusCode: 406
+            ),
+            .init(data: files),
+        ])
+
+        let diff = try await client(transport).diff(in: repository, number: 908)
+
+        #expect(diff.contains("diff --git a/Sources/New.swift b/Sources/New.swift"))
+        #expect(diff.contains("new file mode 100644"))
+        #expect(diff.contains("rename from Sources/Old.swift"))
+        #expect(diff.contains("+let value = 1"))
+        let requests = await transport.requests
+        #expect(requests.map(\.httpMethod) == ["GET", "GET"])
+        #expect(requests[0].value(forHTTPHeaderField: "Accept") == "application/vnd.github.diff")
+        #expect(requests[1].url?.absoluteString == "https://api.github.com/repos/apple/swift-argument-parser/pulls/908/files?per_page=100")
+    }
+
     @Test("commits decode from the captured fixture")
     func commits() async throws {
         let transport = StubTransport(data: try Fixture.data("commits.json"))
@@ -221,6 +258,43 @@ struct GithubClientTests {
 
         let url = try #require(await transport.requests.first?.url?.absoluteString)
         #expect(url.contains("issues/908/timeline"))
+    }
+
+    @Test("timeline sorts supported entries chronologically")
+    func timelineSortsChronologically() async throws {
+        let body = Data(#"""
+        [
+          {
+            "event": "commented",
+            "id": 2,
+            "body": "newer",
+            "created_at": "2026-06-13T10:00:00Z",
+            "updated_at": "2026-06-13T10:00:00Z",
+            "user": {"login": "bot", "avatar_url": null},
+            "author_association": "NONE",
+            "reactions": {}
+          },
+          {
+            "event": "commented",
+            "id": 1,
+            "body": "older",
+            "created_at": "2026-06-13T09:00:00Z",
+            "updated_at": "2026-06-13T09:00:00Z",
+            "user": {"login": "bot", "avatar_url": null},
+            "author_association": "NONE",
+            "reactions": {}
+          }
+        ]
+        """#.utf8)
+        let transport = StubTransport(data: body)
+
+        let timeline = try await client(transport).timeline(in: repository, number: 908)
+
+        guard case .comment(let first) = timeline.first else {
+            Issue.record("expected a comment first, got \(String(describing: timeline.first))")
+            return
+        }
+        #expect(first.databaseId == 1)
     }
 
     @Test("pull request assignees decode when present")

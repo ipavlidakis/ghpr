@@ -11,6 +11,10 @@ import SwiftUI
 struct ReviewScreen: View {
     private let model: ReviewModel
     private let highlighter = SyntaxHighlighter()
+    private let fileListItems: [FileListItem]
+    private let fileTree: [FileTreeNode]
+    private let displayOrder: [String]
+    private let filesByPath: [String: FileDiff]
 
     @State private var tab: ReviewTab = .conversation
     @State private var selectedPath: String?
@@ -30,6 +34,10 @@ struct ReviewScreen: View {
 
     init(model: ReviewModel) {
         self.model = model
+        fileListItems = model.data.files.map(FileListItem.init)
+        fileTree = FileTreeNode.tree(from: fileListItems)
+        displayOrder = FileTreeNode.orderedPaths(from: fileTree)
+        filesByPath = Dictionary(uniqueKeysWithValues: model.data.files.map { ($0.path, $0) })
     }
 
     var body: some View {
@@ -91,47 +99,81 @@ struct ReviewScreen: View {
 
     private var reviewTabs: some View {
         TabView(selection: $tab) {
-            ConversationView(model: model)
-                .tabItem {
-                    Label(ReviewTab.conversation.title, systemImage: ReviewTab.conversation.systemImage)
+            Tab(value: ReviewTab.conversation) {
+                if tab == .conversation {
+                    ConversationView(model: model)
+                        .accessibilityIdentifier("ghpr.tab.conversation.content")
+                        .keyboardShortcut("1", modifiers: .command)
                 }
-                .badge(conversationCount)
-                .tag(ReviewTab.conversation)
-                .keyboardShortcut("1", modifiers: .command)
+            } label: {
+                Label(tabTitle(for: .conversation), systemImage: ReviewTab.conversation.systemImage)
+                    .accessibilityIdentifier("ghpr.tab.conversation")
+            }
 
-            CommitsListView(commits: model.data.commits)
-                .tabItem {
-                    Label(ReviewTab.commits.title, systemImage: ReviewTab.commits.systemImage)
+            Tab(value: ReviewTab.commits) {
+                if tab == .commits {
+                    CommitsListView(commits: model.data.commits)
+                        .accessibilityIdentifier("ghpr.tab.commits.content")
+                        .keyboardShortcut("2", modifiers: .command)
                 }
-                .badge(model.data.commits.count)
-                .tag(ReviewTab.commits)
-                .keyboardShortcut("2", modifiers: .command)
+            } label: {
+                Label(tabTitle(for: .commits), systemImage: ReviewTab.commits.systemImage)
+                    .accessibilityIdentifier("ghpr.tab.commits")
+            }
 
-            ChecksListView(checkRuns: model.data.checkRuns)
-                .tabItem {
-                    Label(ReviewTab.checks.title, systemImage: ReviewTab.checks.systemImage)
+            Tab(value: ReviewTab.checks) {
+                if tab == .checks {
+                    ChecksListView(checkRuns: model.data.checkRuns)
+                        .accessibilityIdentifier("ghpr.tab.checks.content")
+                        .keyboardShortcut("3", modifiers: .command)
                 }
-                .badge(model.data.checkRuns.count)
-                .tag(ReviewTab.checks)
-                .keyboardShortcut("3", modifiers: .command)
+            } label: {
+                Label(tabTitle(for: .checks), systemImage: ReviewTab.checks.systemImage)
+                    .accessibilityIdentifier("ghpr.tab.checks")
+            }
 
-            filesSplitView
-                .tabItem {
-                    Label(filesTabTitle, systemImage: ReviewTab.files.systemImage)
+            Tab(value: ReviewTab.files) {
+                if tab == .files {
+                    filesSplitView
+                        .accessibilityIdentifier("ghpr.tab.files.content")
+                        .keyboardShortcut("4", modifiers: .command)
                 }
-                .tag(ReviewTab.files)
-                .keyboardShortcut("4", modifiers: .command)
+            } label: {
+                Label(tabTitle(for: .files), systemImage: ReviewTab.files.systemImage)
+                    .accessibilityIdentifier("ghpr.tab.files")
+            }
+        }
+        .accessibilityIdentifier("ghpr.review.tabs")
+        .accessibilityLabel("Pull request sections")
+        .overlay(alignment: .topLeading) {
+            tabAccessibilityProxy
+        }
+    }
+
+    private var tabAccessibilityProxy: some View {
+        tabAccessibilityButtons
+            .frame(width: 1, height: 1)
+            .opacity(0.01)
+    }
+
+    private var tabAccessibilityButtons: some View {
+        HStack {
+            ForEach(ReviewTab.allCases, id: \.self) { tab in
+                Button(tabTitle(for: tab)) {
+                    self.tab = tab
+                }
+                .accessibilityIdentifier(tabAccessibilityIdentifier(tab))
+                .accessibilityValue(self.tab == tab ? "Selected" : "Not selected")
+            }
         }
     }
 
     /// Files in tree traversal order (matching the sidebar), with any
     /// full-context expansions swapped in.
     private var displayFiles: [FileDiff] {
-        let order = FileTreeNode.orderedPaths(from: model.data.files.map(FileListItem.init))
-        let rank = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($0.element, $0.offset) })
-        return model.data.files
-            .sorted { (rank[$0.path] ?? .max) < (rank[$1.path] ?? .max) }
-            .map { expandedFiles[$0.path] ?? $0 }
+        return displayOrder.compactMap { path in
+            expandedFiles[path] ?? filesByPath[path]
+        }
     }
 
     private var filesSplitView: some View {
@@ -144,7 +186,7 @@ struct ReviewScreen: View {
                 )
             } else {
                 NavigationSplitView {
-                    FileListView(items: model.data.files.map(FileListItem.init), selectedPath: selectedPath) { item in
+                    FileListView(items: fileListItems, tree: fileTree, selectedPath: selectedPath) { item in
                         selectedPath = item.path
                         scrollTarget = DiffScrollTarget(path: item.path)
                     }
@@ -165,7 +207,7 @@ struct ReviewScreen: View {
                                 viewedFiles.remove(path)
                                 collapsedFiles.remove(path)
                             }
-                            let digest = model.data.files.first { $0.path == path }?.contentDigest ?? ""
+                            let digest = filesByPath[path]?.contentDigest ?? ""
                             Task {
                                 await viewedStore.setViewed(isViewed, path: path, digest: digest, in: pullRequestKey)
                             }
@@ -190,6 +232,8 @@ struct ReviewScreen: View {
                         onVisibleFileChange: { selectedPath = $0 },
                         scrollTarget: scrollTarget
                     )
+                    .equatable()
+                    .padding(.leading, 8)
                 }
             }
         }
@@ -242,8 +286,30 @@ struct ReviewScreen: View {
         model.data.files.count >= 100 ? "99+" : "\(model.data.files.count)"
     }
 
-    private var filesTabTitle: String {
-        "\(ReviewTab.files.title) · \(filesBadgeText)"
+    private func tabTitle(for tab: ReviewTab) -> String {
+        switch tab {
+        case .conversation:
+            "\(ReviewTab.conversation.title)  \(conversationCount)"
+        case .commits:
+            "\(ReviewTab.commits.title)  \(model.data.commits.count)"
+        case .checks:
+            "\(ReviewTab.checks.title)  \(model.data.checkRuns.count)"
+        case .files:
+            "\(ReviewTab.files.title)  \(filesBadgeText)"
+        }
+    }
+
+    private func tabAccessibilityIdentifier(_ tab: ReviewTab) -> String {
+        switch tab {
+        case .conversation:
+            "ghpr.tab.conversation"
+        case .commits:
+            "ghpr.tab.commits"
+        case .checks:
+            "ghpr.tab.checks"
+        case .files:
+            "ghpr.tab.files"
+        }
     }
 
     private var toolbarTitle: some View {
@@ -278,6 +344,7 @@ struct ReviewScreen: View {
         .buttonStyle(.glassProminent)
         .tint(.green)
         .keyboardShortcut(.return, modifiers: .command)
+        .accessibilityIdentifier("ghpr.review.submit")
         .disabled(model.isBusy)
         .popover(isPresented: $isSubmitPopoverShown, arrowEdge: .bottom) {
             SubmitReviewView(
