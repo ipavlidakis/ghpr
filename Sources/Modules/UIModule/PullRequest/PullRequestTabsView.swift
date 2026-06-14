@@ -45,7 +45,7 @@ package struct PullRequestTabsView: View {
         TabView(selection: $tabState.selectedTab) {
             ForEach(PullRequestTab.allCases) { tab in
                 Tab(value: tab) {
-                    tabContent
+                    content(for: tab)
                 } label: {
                     Text(label(for: tab))
                 }
@@ -53,10 +53,24 @@ package struct PullRequestTabsView: View {
         }
     }
 
-    private var tabContent: some View {
+    private func content(for tab: PullRequestTab) -> some View {
         VStack(spacing: .zero) {
             PullRequestHeaderView(pullRequest: pullRequest, repository: repository)
-            Color.blue
+            tabContent(for: tab)
+        }
+    }
+
+    @ViewBuilder
+    private func tabContent(for tab: PullRequestTab) -> some View {
+        switch tab {
+        case .conversations:
+            PullRequestConversationsView()
+        case .commits:
+            PullRequestCommitsView()
+        case .checks:
+            PullRequestChecksView()
+        case .filesChanged:
+            PullRequestFilesChangedView()
         }
     }
 
